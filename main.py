@@ -19,6 +19,7 @@ def on_slider_change(metric_changed):
         calc_button.config(state=tk.NORMAL)
     else:
         calc_button.config(state=tk.DISABLED)
+
 def display_results_window(accuracy, sorted_results):
     result_window = tk.Toplevel(root)
     result_window.title("Results and Accuracy")
@@ -47,15 +48,28 @@ def display_results_window(accuracy, sorted_results):
     left_towns = towns[:len(towns)//2]
     right_towns = towns[len(towns)//2:]
     
+    ground_truth = {
+        'Invercargill': ['Cromwell', 'Reefton', 'Masterton'],
+        'Cromwell': ['Invercargill', 'Reefton', 'Masterton'],
+        'Masterton': ['Invercargill', 'Cromwell', 'Reefton'],
+        'Reefton': ['Invercargill', 'Cromwell', 'Masterton']
+    }
+
     for target_town in left_towns:
         tk.Label(left_frame, text=f"Target Town: {target_town}", anchor='e').pack(pady=5, fill=tk.X)
         for idx, town in enumerate(sorted_results[target_town], 1):
-            tk.Label(left_frame, text=f"   Rank {idx}: {town}", anchor='e').pack(fill=tk.X, padx=20)
+            correct = town == ground_truth[target_town][idx - 1]
+            font_weight = 'bold' if correct else 'normal'
+            color = 'green' if correct else 'black'
+            tk.Label(left_frame, text=f"   Rank {idx}: {town}", anchor='e', font=('Arial', 10, font_weight), fg=color).pack(fill=tk.X, padx=20)
     
     for target_town in right_towns:
         tk.Label(right_frame, text=f"Target Town: {target_town}", anchor='w').pack(pady=5, fill=tk.X)
         for idx, town in enumerate(sorted_results[target_town], 1):
-            tk.Label(right_frame, text=f"   Rank {idx}: {town}", anchor='w').pack(fill=tk.X, padx=20)
+            correct = town == ground_truth[target_town][idx - 1]
+            font_weight = 'bold' if correct else 'normal'
+            color = 'green' if correct else 'black'
+            tk.Label(right_frame, text=f"   Rank {idx}: {town}", anchor='w', font=('Arial', 10, font_weight), fg=color).pack(fill=tk.X, padx=20)
 
 def calculate_ranking():
     wind_weight = sliders['Wind speed'].get()
@@ -119,14 +133,15 @@ def reset_to_defaults():
         slider_labels[metric].config(text=f"{metric}: {weight:.2f}")
     on_slider_change(None)
 
+
 root = tk.Tk()
 root.title("Rank Towns")
 
-frame = ttk.LabelFrame(root, text="Adjust Weights", padding=(10, 5))
+frame = tk.LabelFrame(root, text="Adjust Weights", font=('Arial', 12, 'bold'), pady=20, padx=20)
 frame.pack(pady=20, padx=20, fill=tk.BOTH, expand=True)
 
-total_label = ttk.Label(frame, text="Total: 1.00", font=('Arial', 10))
-total_label.pack(pady=10)
+total_label = tk.Label(frame, text="Total: 1.00", font=('Arial', 10))
+total_label.pack(pady=15)
 
 metrics = [
     'Wind speed',
