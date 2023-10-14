@@ -166,23 +166,35 @@ function App() {
     const [weights, setWeights] = useState(defaultWeights);
     const [lastChangedMetric, setLastChangedMetric] = useState(null);
     const [rankings, setRankings] = useState({});
+    const [isDataProcessed, setIsDataProcessed] = useState(false)
     // State for the weighted results
     const [weightedResults, setWeightedResults] = useState({});
     const [selectedTown, setSelectedTown] = useState("Invercargill");
     const heatmapData = getHeatmapDataForTown(selectedTown);
 
     useEffect(() => {
+        
         // Create a deep copy of the original results
         const deepCopy = JSON.parse(JSON.stringify(results));
-
+        console.log(results, 'ogResutls')
+        console.log(deepCopy, 'ogDeepCopy')
+        if(weights == null) {
+            console.log('null check')
+        }
         // Iterate over the deep copy to adjust metric names and apply weights
         for (let town in deepCopy) {
             for (let targetTown in deepCopy[town]) {
                 let totalWeightedScore = 0;
                 for (let metric in deepCopy[town][targetTown]) {
                     if (metric !== 'total_score') {
-                        let weightedScore = deepCopy[town][targetTown][metric] * weights[metric];
-                        deepCopy[town][targetTown][`weighted_${metric}`] = weightedScore;
+                        // let weightedScore = deepCopy[town][targetTown][metric] * weights[metric];
+                        // console.log('deepcopymetric', deepCopy[town][targetTown][metric])
+                        let deepCopyMetric = parseFloat(deepCopy[town][targetTown][metric])
+                        // console.log('convertered Metric', deepCopyMetric)
+                        console.log(weights[metric], 'w metric')
+                        let weightedScore = deepCopyMetric * weights[metric];
+                        console.log("weighted Score ", weightedScore    )
+                        deepCopy[town][targetTown][metric] = weightedScore;
                         totalWeightedScore += weightedScore;
                         delete deepCopy[town][targetTown][metric];
                     }
@@ -193,7 +205,15 @@ function App() {
 
         // Set the adjusted copy to the state
         setWeightedResults(deepCopy);
-    }, [weights]);  // Re-run the effect whenever the weights change
+        // Set isDataProcessed to true once the processing is complete
+        setIsDataProcessed(true);
+        console.log(deepCopy)
+    }, [rankings]);  // Re-run the effect whenever the weights change
+
+    useEffect(() => {
+        
+        calculateRanking()
+    }, [])
 
     const handleSliderChange = (name, value) => {
         const updatedWeights = {
@@ -224,7 +244,6 @@ function App() {
         const mapRef = useRef(null);
 
         useEffect(() => {
-            calculateRanking()
             const map = L.map(mapRef.current, {
                 zoomControl: false,
                 scrollWheelZoom: false,
@@ -237,9 +256,7 @@ function App() {
             let data = []
             let heatmapData = [];
             if (selectedTown !== town) {
-                console.log(town)
-                console.log(weightedResults)
-                let score = results[selectedTown][town].total_score;
+                let score = weightedResults[selectedTown][town].total_score;
 
                 const [lat, lng] = townCoordinates[town];
                 const coord = townCoordinates[town]
@@ -275,113 +292,6 @@ function App() {
 
     const calculateRanking = () => {
         const orderedResults = {};
-        const results = {
-            "Invercargill": {
-                "Cromwell": {
-                    "wind_score": 0.009801594005568952,
-                    "pressure_score": 0.010659595511681216,
-                    "density_score": 0.017142629387204376,
-                    "altitude_score": 0.9523809523809523,
-                    "woodburner_score": 0.02820745372643021,
-                    "total_score": 1.0181922250118371
-                },
-                "Masterton": {
-                    "wind_score": 0.07539834478481838,
-                    "pressure_score": 0.013869741536417063,
-                    "density_score": 0.2323579700450593,
-                    "altitude_score": 0.1984126984126984,
-                    "woodburner_score": 0.2020504667637993,
-                    "total_score": 0.7220892215427924
-                },
-                "Reefton": {
-                    "wind_score": 0.02933791202874373,
-                    "pressure_score": 0.015119790699094873,
-                    "density_score": 0.13066528570567998,
-                    "altitude_score": 0.42063492063492064,
-                    "woodburner_score": 0.3436260160331387,
-                    "total_score": 0.939383925101578
-                }
-            },
-            "Cromwell": {
-                "Invercargill": {
-                    "wind_score": 0.009801594005568952,
-                    "pressure_score": 0.010659595511681216,
-                    "density_score": 0.017142629387204376,
-                    "altitude_score": 0.9523809523809523,
-                    "woodburner_score": 0.02820745372643021,
-                    "total_score": 1.0181922250118371
-                },
-                "Masterton": {
-                    "wind_score": 0.07522248936866244,
-                    "pressure_score": 0.024186632790616443,
-                    "density_score": 0.30134574273742615,
-                    "altitude_score": 0.7063492063492064,
-                    "woodburner_score": 0.5869215065186846,
-                    "total_score": 1.694025577764596
-                },
-                "Reefton": {
-                    "wind_score": 0.03031406412288818,
-                    "pressure_score": 0.011613772582161331,
-                    "density_score": 0.4030384270768054,
-                    "altitude_score": 0.48412698412698413,
-                    "woodburner_score": 0.041245023721746536,
-                    "total_score": 0.9703382716305855
-                }
-            },
-            "Masterton": {
-                "Invercargill": {
-                    "wind_score": 0.07539834478481838,
-                    "pressure_score": 0.013869741536417063,
-                    "density_score": 0.2323579700450593,
-                    "altitude_score": 0.1984126984126984,
-                    "woodburner_score": 0.2020504667637993,
-                    "total_score": 0.7220892215427924
-                },
-                "Cromwell": {
-                    "wind_score": 0.07522248936866244,
-                    "pressure_score": 0.024186632790616443,
-                    "density_score": 0.30134574273742615,
-                    "altitude_score": 0.7063492063492064,
-                    "woodburner_score": 0.5869215065186846,
-                    "total_score": 1.694025577764596
-                },
-                "Reefton": {
-                    "wind_score": 0.08953179980960459,
-                    "pressure_score": 0.027157916149414593,
-                    "density_score": 0.4491536578303103,
-                    "altitude_score": 0.1746031746031746,
-                    "woodburner_score": 0.13259798931562256,
-                    "total_score": 0.8730445377081266
-                }
-            },
-            "Reefton": {
-                "Invercargill": {
-                    "wind_score": 0.02933791202874373,
-                    "pressure_score": 0.015119790699094873,
-                    "density_score": 0.13066528570567998,
-                    "altitude_score": 0.42063492063492064,
-                    "woodburner_score": 0.3436260160331387,
-                    "total_score": 0.939383925101578
-                },
-                "Cromwell": {
-                    "wind_score": 0.03031406412288818,
-                    "pressure_score": 0.011613772582161331,
-                    "density_score": 0.4030384270768054,
-                    "altitude_score": 0.48412698412698413,
-                    "woodburner_score": 0.041245023721746536,
-                    "total_score": 0.9703382716305855
-                },
-                "Masterton": {
-                    "wind_score": 0.08953179980960459,
-                    "pressure_score": 0.027157916149414593,
-                    "density_score": 0.4491536578303103,
-                    "altitude_score": 0.1746031746031746,
-                    "woodburner_score": 0.13259798931562256,
-                    "total_score": 0.8730445377081266
-                }
-            }
-        };
-
         for (let targetTown in results) {
             orderedResults[targetTown] = {};
             for (let childName in results[targetTown]) {
@@ -393,11 +303,11 @@ function App() {
                     scores.altitude_score * weights.altitude +
                     scores.woodburner_score * weights.woodBurnerDensity
                 );
-                console.log(scores, childName)
+                // console.log(scores, childName)
                 orderedResults[targetTown][childName] = scores.total_score;
             }
         }
-
+        
         const sortedResults = {};
         for (let targetTown in results) {
             let sortedChildDicts = Object.entries(results[targetTown]).sort((a, b) => a[1].total_score - b[1].total_score);
@@ -460,37 +370,6 @@ function App() {
     };
 
 
-    // This is a custom component that adds the heatmap layer to the Leaflet map
-    function HeatmapLayer({ data }) {
-        const map = useMap();
-
-        React.useEffect(() => {
-            if (!map) return;
-
-            // Create the heatmap layer
-            const heatmapLayer = new window.HeatmapOverlay({
-                radius: 0.5,
-                maxOpacity: 0.8,
-                scaleRadius: true,
-                useLocalExtrema: true,
-                latField: 'lat',
-                lngField: 'lng',
-                valueField: 'value'
-            });
-
-
-
-            // Add heatmap layer to the map
-            map.addLayer(heatmapLayer);
-            heatmapLayer.setData({ max: 10, data: data });  // Here max is the maximum value for total_score. Adjust accordingly.
-
-            return () => {
-                map.removeLayer(heatmapLayer);
-            };
-        }, [map, data]);
-
-        return null;
-    }
 
     return (
         <div className="app">
@@ -511,12 +390,12 @@ function App() {
             <div>
                 <TownSelector onChange={setSelectedTown} />
                 {/* <div id="map" ref={mapRef} style={{ width: '100vw', height: '100vh' }}></div> */}
-                <div style={gridStyle}>
+                {isDataProcessed && (<div style={gridStyle}>
                     <MyMap town="Invercargill" data={results["Invercargill"]} />
                     <MyMap town="Cromwell" data={results["Cromwell"]} />
                     <MyMap town="Masterton" data={results["Masterton"]} />
                     <MyMap town="Reefton" data={results["Reefton"]} />
-                </div>
+                </div>)}
 
             </div>
 
