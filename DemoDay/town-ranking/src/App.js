@@ -216,41 +216,59 @@ function App() {
 
   function MyMap({ town, data }) {
     const mapRef = useRef(null);
+    const [weights, setWeights] = useState(defaultWeights);
+    const [lastChangedMetric, setLastChangedMetric] = useState(null);
+    const [rankings, setRankings] = useState({});
+    const [isDataProcessed, setIsDataProcessed] = useState(false)
+    // State for the weighted results
+    const [weightedResults, setWeightedResults] = useState({});
+    const [selectedTown, setSelectedTown] = useState("Invercargill");
+    const heatmapData = getHeatmapDataForTown(selectedTown);
 
     useEffect(() => {
-      calculateRanking();
-      const map = L.map(mapRef.current, {
-        zoomControl: false,
-        scrollWheelZoom: false,
-        touchZoom: false,
-        doubleClickZoom: false,
-      }).setView(townCoordinates[town], 12);
-
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(
-        map
-      );
-      let data = [];
-      let heatmapData = [];
-      if (selectedTown !== town) {
-        console.log(town);
-        console.log(weightedResults);
-        let score = results[selectedTown][town].total_score;
-
-        const [lat, lng] = townCoordinates[town];
-        const coord = townCoordinates[town];
-        if (score > 1) {
-          score = 1;
+        
+        // Create a deep copy of the original results
+        const deepCopy = JSON.parse(JSON.stringify(results));
+        console.log(results, 'ogResutls')
+        console.log(deepCopy, 'ogDeepCopy')
+        if(weights == null) {
+            console.log('null check')
+        }
+        // Iterate over the deep copy to adjust metric names and apply weights
+        for (let town in deepCopy) {
+            for (let targetTown in deepCopy[town]) {
+                let totalWeightedScore = 0;
+                for (let metric in deepCopy[town][targetTown]) {
+                    if (metric !== 'total_score') {
+                        // let weightedScore = deepCopy[town][targetTown][metric] * weights[metric];
+                        // console.log('deepcopymetric', deepCopy[town][targetTown][metric])
+                        let deepCopyMetric = parseFloat(deepCopy[town][targetTown][metric])
+                        // console.log('convertered Metric', deepCopyMetric)
+                        console.log(weights[metric], 'w metric')
+                        let weightedScore = deepCopyMetric * weights[metric];
+                        console.log("weighted Score ", weightedScore    )
+                        deepCopy[town][targetTown][metric] = weightedScore;
+                        totalWeightedScore += weightedScore;
+                        delete deepCopy[town][targetTown][metric];
+                    }
+                }
+                deepCopy[town][targetTown]['total_score'] = totalWeightedScore;
+            }
         }
         heatmapData.push([lat, lng, score]); // Adding data point to heatmapData array
         console.log(town, heatmapData);
 
-        L.circle(coord, {
-          radius: 4000,
-          color: getColor(score), // Border color
-          fillColor: getColor(score), // Fill color based on the score
-          fillOpacity: 0.5, // Fill opacity
-        }).addTo(map);
-      }
+        // Set the adjusted copy to the state
+        setWeightedResults(deepCopy);
+        // Set isDataProcessed to true once the processing is complete
+        setIsDataProcessed(true);
+        console.log(deepCopy)
+    }, [rankings]);  // Re-run the effect whenever the weights change
+
+    useEffect(() => {
+        
+        calculateRanking()
+    }, [])
 
       // const heatmapData = getHeatmapData(town);
 
