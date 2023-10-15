@@ -8,6 +8,11 @@ import "leaflet/dist/leaflet.css";
 import { MapContainer, TileLayer, useMap } from "react-leaflet";
 import RankingDisplay from "./components/RankingDisplay";
 import AccuracyChart from './components/AccuracyChart';
+import WindSpeedHistograms from "./components/WindSpeedDensityPlot";
+import wind_image from "./resources/wind_bigger.png"
+import pressure_image from "./resources/pressureDist.png"
+import threeFigs from "./resources/3figs.png"
+import ImageComp from "./components/ImageComp";
 
 
 function App() {
@@ -306,7 +311,7 @@ function App() {
       };
     }, [town, data]);
 
-    return <div className="w-[25vh] h-[25vh]" ref={mapRef}></div>;
+    return <div className="z-0 w-[25vh] h-[25vh] z-1" ref={mapRef}></div>;
   };
 
   // Re-run the effect whenever the weights change
@@ -464,7 +469,7 @@ function App() {
         </div>
   
         {/* Middle: Maps and Charts */}
-        <div className="flex flex-col w-1/2 border-r "> {/* New 'w-1/2' class for half-width */}
+        <div className="flex flex-col w-1/2 border-r "> 
           {isDataProcessed && resultDetails && (
             <div>
               <h2 className="text-2xl font-bold text-#285954 px-4 pt-4">Towns</h2>
@@ -480,14 +485,20 @@ function App() {
         </div>
   
         {/* Right side: Dummy Data (Third column) */}
-        <div className="flex flex-col w-1/4 "> {/* This is the new third column */}
-          <h2 className="text-2xl font-bold text-#285954 px-4 pt-4">Dummy Data</h2>
-          {/* Content for your dummy data here */}
-          <div className="dummy-content">
-            {/* Replace with whatever content or components you want to display here */}
-            <p>Some placeholder text or data here.</p>
-          </div>
-        </div>
+        <div className="flex flex-col w-1/4 ">
+  <h2 className="text-2xl font-bold text-#285954 px-4 pt-4">Metadata</h2>
+  <div className="dummy-content p-4"> {/* <-- Added padding here */}
+    <div className="py-2"> {/* <-- Added vertical padding for each image component */}
+      <ImageComp img={wind_image} name="Wind Speed Distribution"></ImageComp>
+    </div>
+    <div className="py-2">
+      <ImageComp img={pressure_image} name="Atmostpheric Pressure Distribution"></ImageComp>
+    </div>
+    <div className="py-2">
+      <ImageComp img={threeFigs} name="Population Density/Altitude/Woodburner Density"></ImageComp>
+    </div>
+  </div>
+</div>
       </div>
     </div>
   );
