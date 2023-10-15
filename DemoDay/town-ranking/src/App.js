@@ -7,6 +7,8 @@ import "leaflet.heat";
 import "leaflet/dist/leaflet.css";
 import { MapContainer, TileLayer, useMap } from "react-leaflet";
 import RankingDisplay from "./components/RankingDisplay";
+import AccuracyChart from './components/AccuracyChart';
+
 
 function App() {
   const gridStyle = {
@@ -16,6 +18,30 @@ function App() {
     height: "95vh",
   };
 
+  const resultDetailsObj = {
+    "Invercargill": { 
+        correct: ["Cromwell"], 
+        incorrect: [
+            { expected: "Reefton", got: "Masterton" }, 
+            { expected: "Masterton", got: "Reefton" }
+        ] 
+    },
+    "Cromwell": { 
+        correct: ["Invercargill", "Reefton"], 
+        incorrect: [
+            { expected: "Masterton", got: "Reefton" }
+        ] 
+    },
+    "Masterton": { 
+        correct: ["Invercargill", "Cromwell", "Reefton"], 
+        incorrect: []  // No incorrect matches, since all were correct
+    },
+    "Reefton": { 
+        correct: ["Invercargill", "Cromwell", "Masterton"], 
+        incorrect: []  // No incorrect matches, since all were correct
+    }
+  }
+
   const metrics = [
     "wind_score",
     "pressure_score",
@@ -24,14 +50,13 @@ function App() {
     "woodburner_score",
   ];
 
-  const gradient = {
-    0.4: "blue",
-    0.6: "lime",
-    0.7: "yellow",
-    0.8: "orange",
-    1.0: "red",
-  };
 
+  const ground_truth = {
+    'Invercargill': ['Cromwell', 'Reefton', 'Masterton'],
+    'Cromwell': ['Invercargill', 'Reefton', 'Masterton'],
+    'Masterton': ['Invercargill', 'Cromwell', 'Reefton'],
+    'Reefton': ['Invercargill', 'Cromwell', 'Masterton']
+  }
   const defaultWeights = {
     wind_score: 0.3125,
     pressure_score: 0.21875,
@@ -153,10 +178,10 @@ function App() {
     Reefton: [-42.116, 171.8687],
   };
 
-  const mapRef = useRef(null);
   const [weights, setWeights] = useState(defaultWeights);
   const [lastChangedMetric, setLastChangedMetric] = useState(null);
   const [rankings, setRankings] = useState({});
+  const [resultDetails, setResultDetails] = useState(null); 
   // State for the weighted results
   const [weightedResults, setWeightedResults] = useState({});
   const [selectedTown, setSelectedTown] = useState("Invercargill");
@@ -178,16 +203,10 @@ function App() {
     }
 
     setWeights(updatedWeights);
+    calculateRanking();
     setLastChangedMetric(name);
   };
 
-  function getColor(score) {
-    if (score < 0.2) return "#000000";
-    if (score < 0.4) return "#570000";
-    if (score < 0.6) return "#ff0000";
-    if (score < 0.8) return "#ffc800";
-    return "#ffff00";
-  }
 
   useEffect(() => {
     // Create a deep copy of the original results
@@ -212,10 +231,7 @@ function App() {
               let deepCopyMetric = parseFloat(
                 deepCopy[town][targetTown][metric]
               );
-              // console.log('convertered Metric', deepCopyMetric)
-              console.log(weights[metric], "w metric", deepCopyMetric, "deepcopyMetric");
               let weightedScore = deepCopyMetric * weights[metric];
-              console.log("weighted Score ", weightedScore);
               deepCopy[town][targetTown][metric] = weightedScore;
               totalWeightedScore += weightedScore;
             }
@@ -231,6 +247,7 @@ function App() {
       // Set isDataProcessed to true once the processing is complete
       setIsDataProcessed(true);
       console.log(deepCopy, 'output');
+      calculateRanking();
     }
   }, [weights]);
 
@@ -245,8 +262,21 @@ function App() {
         doubleClickZoom: false
       }).setView(townCoordinates[town], 12);
 
-      let heatmapData = [];
-      if (selectedTown !== town) {
+      if (selectedTown === town) {
+        // Display rankings for the selected town
+        const rankList = rankings[selectedTown].map((t, index) => {
+          // Check if the individual ranking matches the ground truth
+          const isCorrect = ground_truth[selectedTown][index] === t;
+          return `<span class="${isCorrect ? 'text-green-500' : 'text-red-500'}">${index + 1}. ${t}</span>`;
+        }).join('<br/>');
+
+        const popupContent = `<strong>Rankings:</strong><br/>${rankList}`;
+
+        L.popup()
+          .setLatLng(townCoordinates[town])
+          .setContent(popupContent)
+          .openOn(map);
+      } else {
         const score = weightedResults[selectedTown][town].total_score;
         const [lat, lng] = townCoordinates[town];
         const green = Math.min(255, Math.floor(255 * (1 - score * 2)));
@@ -256,28 +286,10 @@ function App() {
         const circle = L.circle([lat, lng], {
           color: color,
           fillColor: color,
-          fillOpacity: 0.6,
+          fillOpacity: 0.4,
           radius: 2000,
         }).addTo(map);
 
-        let popupStr = ""
-        // for (let town in weightedresults) {
-          // for (let targetTown in town) {
-            // for (let metric in weightedResults[town][targetTown]) {
-            //   if (isNaN(weights[metric])) {
-    
-            //   }
-                // else {
-
-
-
-                // }
-
-          // }
-
-        // }
-
-        // Attach a popup to the circle with the score
         circle.bindPopup(`Score: ${score.toFixed(2)}`);
         circle.on('mouseover', function (e) {
           this.openPopup();
@@ -294,15 +306,17 @@ function App() {
       };
     }, [town, data]);
 
-    return <div className ="w-[30vh] h-[30vh]" ref={mapRef}></div>;
-};
- // Re-run the effect whenever the weights change
+    return <div className="w-[25vh] h-[25vh]" ref={mapRef}></div>;
+  };
+
+  // Re-run the effect whenever the weights change
 
   // return <div ref={mapRef} className="w-[30vh] h-[30vh]"></div>;
 
   useEffect(() => {
 
     calculateRanking()
+    console.log('result Details', resultDetailsObj)
   }, [])
 
   const calculateRanking = () => {
@@ -331,6 +345,45 @@ function App() {
     }
 
     setRankings(sortedResults);
+    console.log('this is the new rankings', rankings)
+
+    let totalPossibleMatches = 0;
+    let totalActualMatches = 0;
+    let resultDetailsUpdate = {};
+
+    for (let town in ground_truth) {
+      totalPossibleMatches += ground_truth[town].length;
+
+      resultDetailsUpdate[town] = {
+        correct: [],
+        incorrect: []
+      };
+
+      for (let i = 0; i < ground_truth[town].length; i++) {
+
+        console.log(town, ground_truth[town], 'check')
+        console.log('rnakings', rankings)
+        if (Object.keys(rankings).length > 0) {
+          console.log('compare', ground_truth[town][i], rankings[town][i])
+          if (ground_truth[town][i] == rankings[town][i]) {
+            totalActualMatches++;
+            console.log(town, ground_truth[town], 'check')
+            resultDetailsUpdate[town].correct.push(rankings[town][i]);
+          } else {
+            resultDetailsUpdate[town].incorrect.push({
+              expected: ground_truth[town][i],
+              got: rankings[town][i]
+            })
+          };
+        }
+      }
+    }
+
+    let accuracyPercentage = (totalActualMatches / totalPossibleMatches) * 100;
+    console.log('accuracy total', totalActualMatches)
+    console.log(`Accuracy: ${accuracyPercentage.toFixed(2)}%`);
+    console.log(resultDetailsUpdate);
+    setResultDetails(resultDetailsUpdate)
   };
 
   // Whenever any weight changes, recalculate the rankings
@@ -349,9 +402,9 @@ function App() {
 
   const totalWeight = Object.values(weights).reduce((acc, val) => acc + val, 0);
 
-  function TownSelector({ onChange }) {
+  function TownSelector({ onChange, selected }) {
     return (
-      <select onChange={(e) => onChange(e.target.value)}>
+      <select onChange={(e) => onChange(e.target.value)} value={selected}>
         {Object.keys(results).map((town) => (
           <option key={town} value={town}>
             {town}
@@ -360,6 +413,7 @@ function App() {
       </select>
     );
   }
+
 
   function getHeatmapDataForTown(selectedTown) {
     const associatedTownsScores = results[selectedTown];
@@ -379,46 +433,66 @@ function App() {
 
 
   return (
-    <div className="app flex h-screen p-4">
-      {/* Left side: Sliders and controls */}
-      <div className="flex flex-col w-1/4 space-y-4 pr-4">
-        {metrics.map((metric) => (
-          <WeightSlider
-            key={metric}
-            name={metric}
-            value={weights[metric]}
-            onChange={handleSliderChange}
-            className="mb-2"
-          />
-        ))}
-        <TotalLabel total={totalWeight} className="mb-2" />
-        <button
-          onClick={resetToDefaults}
-          className="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500 mt-2"
-        >
-          Reset to Defaults
-        </button>
-        <div className="mt-4 ">
-          <TownSelector onChange={setSelectedTown} />
+    <div className="app flex flex-col items-center h-screen p-4 bg-gray-100 font-sans">
+      <h1 className="text-4xl font-bold mb-8 text-gray-800 border-b-4 border-#285954 pb-2">Optimising Source Domain Selection for Transfer Learning in Air Quality Prediction</h1>
+  
+      {/* Main content */}
+      <div className="flex w-full max-w-7xl h-full border rounded-lg overflow-hidden shadow-lg bg-white">
+        {/* Left side: Sliders and controls */}
+        <div className="flex flex-col w-1/4 border-r p-4 space-y-4"> 
+          <h2 className="text-2xl font-bold text-#285954">Weightings</h2>
+          {metrics.map((metric) => (
+            <WeightSlider
+              key={metric}
+              name={metric}
+              value={weights[metric]}
+              onChange={handleSliderChange}
+              className="mb-2"
+            />
+          ))}
+          <TotalLabel total={totalWeight} className="mb-2" />
+          <button
+            onClick={resetToDefaults}
+            className="bg-[#285954] text-gray-100 px-4 py-2 rounded hover:bg-#1f4a45 transition duration-300 mt-2"
+          >
+            Reset to Defaults
+          </button>
+  
+          <div className="mt-4">
+            <TownSelector onChange={setSelectedTown} selected={selectedTown} />
+          </div>
+        </div>
+  
+        {/* Middle: Maps and Charts */}
+        <div className="flex flex-col w-1/2 border-r "> {/* New 'w-1/2' class for half-width */}
+          {isDataProcessed && resultDetails && (
+            <div>
+              <h2 className="text-2xl font-bold text-#285954 px-4 pt-4">Towns</h2>
+              <div className="flex-1 p-4 grid grid-cols-2 gap-4">
+                <MyMap town="Invercargill" data={results["Invercargill"]} />
+                <MyMap town="Cromwell" data={results["Cromwell"]} />
+                <MyMap town="Masterton" data={results["Masterton"]} />
+                <MyMap town="Reefton" data={results["Reefton"]} />
+              </div>
+              <AccuracyChart  resultDetails={resultDetails} />
+            </div>
+          )}
+        </div>
+  
+        {/* Right side: Dummy Data (Third column) */}
+        <div className="flex flex-col w-1/4 "> {/* This is the new third column */}
+          <h2 className="text-2xl font-bold text-#285954 px-4 pt-4">Dummy Data</h2>
+          {/* Content for your dummy data here */}
+          <div className="dummy-content">
+            {/* Replace with whatever content or components you want to display here */}
+            <p>Some placeholder text or data here.</p>
+          </div>
         </div>
       </div>
-
-      {/* Right side: Maps */}
-      {isDataProcessed && (<div className="w-1/2 grid grid-cols-2 gap-x-4 gap-y-2 h-[50vh]">
-        <div className="flex ml-auto mt-auto">
-          <MyMap town="Invercargill" data={results["Invercargill"]} />
-        </div>
-        <div className="flex mr-auto mt-auto">
-          <MyMap town="Cromwell" data={results["Cromwell"]} />
-        </div>
-        <div className="flex ml-auto mb-auto">
-          <MyMap town="Masterton" data={results["Masterton"]} />
-        </div>
-        <div className="flex mr-auto mb-autov">
-          <MyMap town="Reefton" data={results["Reefton"]} />
-        </div>
-      </div>)}
     </div>
   );
+  
+
+
 }
 export default App;
