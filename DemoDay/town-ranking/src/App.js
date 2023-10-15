@@ -13,15 +13,15 @@ function App() {
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
     gap: "16px",
-    height: "100vh",
+    height: "95vh",
   };
 
   const metrics = [
-    "windSpeed",
-    "atmosphericPressure",
-    "altitude",
-    "populationDensity",
-    "woodBurnerDensity",
+    "wind_score",
+    "pressure_score",
+    "altitude_score",
+    "density_score",
+    "woodburner_score",
   ];
 
   const gradient = {
@@ -33,11 +33,11 @@ function App() {
   };
 
   const defaultWeights = {
-    windSpeed: 0.3125,
-    atmosphericPressure: 0.21875,
-    altitude: 0.03125,
-    populationDensity: 0.3125,
-    woodBurnerDensity: 0.125,
+    wind_score: 0.3125,
+    pressure_score: 0.21875,
+    altitude_score: 0.03125,
+    density_score: 0.3125,
+    woodburner_score: 0.125,
   };
   const results = {
     Invercargill: {
@@ -160,32 +160,7 @@ function App() {
   // State for the weighted results
   const [weightedResults, setWeightedResults] = useState({});
   const [selectedTown, setSelectedTown] = useState("Invercargill");
-  const heatmapData = getHeatmapDataForTown(selectedTown);
-
-  useEffect(() => {
-    // Create a deep copy of the original results
-    const deepCopy = JSON.parse(JSON.stringify(results));
-
-    // Iterate over the deep copy to adjust metric names and apply weights
-    for (let town in deepCopy) {
-      for (let targetTown in deepCopy[town]) {
-        let totalWeightedScore = 0;
-        for (let metric in deepCopy[town][targetTown]) {
-          if (metric !== "total_score") {
-            let weightedScore =
-              deepCopy[town][targetTown][metric] * weights[metric];
-            deepCopy[town][targetTown][`weighted_${metric}`] = weightedScore;
-            totalWeightedScore += weightedScore;
-            delete deepCopy[town][targetTown][metric];
-          }
-        }
-        deepCopy[town][targetTown]["total_score"] = totalWeightedScore;
-      }
-    }
-
-    // Set the adjusted copy to the state
-    setWeightedResults(deepCopy);
-  }, [weights]); // Re-run the effect whenever the weights change
+  const [isDataProcessed, setIsDataProcessed] = useState(false)
 
   const handleSliderChange = (name, value) => {
     const updatedWeights = {
@@ -214,30 +189,23 @@ function App() {
     return "#ffff00";
   }
 
-  function MyMap({ town, data }) {
-    const mapRef = useRef(null);
-    const [weights, setWeights] = useState(defaultWeights);
-    const [lastChangedMetric, setLastChangedMetric] = useState(null);
-    const [rankings, setRankings] = useState({});
-    const [isDataProcessed, setIsDataProcessed] = useState(false);
-    // State for the weighted results
-    const [weightedResults, setWeightedResults] = useState({});
-    const [selectedTown, setSelectedTown] = useState("Invercargill");
-    const heatmapData = getHeatmapDataForTown(selectedTown);
+  useEffect(() => {
+    // Create a deep copy of the original results
+    const deepCopy = JSON.parse(JSON.stringify(results));
+    console.log(results, "ogResutls");
+    console.log(deepCopy, "ogDeepCopy");
+    if (weights == null) {
+      console.log("null check");
+    }
+    // Iterate over the deep copy to adjust metric names and apply weights
+    for (let town in deepCopy) {
+      for (let targetTown in deepCopy[town]) {
+        let totalWeightedScore = 0;
+        for (let metric in deepCopy[town][targetTown]) {
+          if (isNaN(weights[metric])) {
 
-    useEffect(() => {
-      // Create a deep copy of the original results
-      const deepCopy = JSON.parse(JSON.stringify(results));
-      console.log(results, "ogResutls");
-      console.log(deepCopy, "ogDeepCopy");
-      if (weights == null) {
-        console.log("null check");
-      }
-      // Iterate over the deep copy to adjust metric names and apply weights
-      for (let town in deepCopy) {
-        for (let targetTown in deepCopy[town]) {
-          let totalWeightedScore = 0;
-          for (let metric in deepCopy[town][targetTown]) {
+          }
+          else {
             if (metric !== "total_score") {
               // let weightedScore = deepCopy[town][targetTown][metric] * weights[metric];
               // console.log('deepcopymetric', deepCopy[town][targetTown][metric])
@@ -245,149 +213,110 @@ function App() {
                 deepCopy[town][targetTown][metric]
               );
               // console.log('convertered Metric', deepCopyMetric)
-              console.log(weights[metric], "w metric");
+              console.log(weights[metric], "w metric", deepCopyMetric, "deepcopyMetric");
               let weightedScore = deepCopyMetric * weights[metric];
               console.log("weighted Score ", weightedScore);
               deepCopy[town][targetTown][metric] = weightedScore;
               totalWeightedScore += weightedScore;
-              delete deepCopy[town][targetTown][metric];
             }
           }
           deepCopy[town][targetTown]["total_score"] = totalWeightedScore;
         }
       }
-      heatmapData.push([lat, lng, score]); // Adding data point to heatmapData array
-      console.log(town, heatmapData);
+      // heatmapData.push([lat, lng, score]); // Adding data point to heatmapData array
+      // console.log(town, heatmapData);
 
       // Set the adjusted copy to the state
       setWeightedResults(deepCopy);
       // Set isDataProcessed to true once the processing is complete
       setIsDataProcessed(true);
-      console.log(deepCopy);
-    }, [rankings]); // Re-run the effect whenever the weights change
+      console.log(deepCopy, 'output');
+    }
+  }, [weights]);
 
-    return <div ref={mapRef} className="w-[30vh] h-[30vh]"></div>;
-  }
+  function MyMap({ town, data }) {
+    const mapRef = useRef(null);
+
+    useEffect(() => {
+      const map = L.map(mapRef.current, {
+        zoomControl: false,
+        scrollWheelZoom: false,
+        touchZoom: false,
+        doubleClickZoom: false
+      }).setView(townCoordinates[town], 12);
+
+      let heatmapData = [];
+      if (selectedTown !== town) {
+        const score = weightedResults[selectedTown][town].total_score;
+        const [lat, lng] = townCoordinates[town];
+        const green = Math.min(255, Math.floor(255 * (1 - score * 2)));
+        const red = Math.min(255, Math.floor(255 * (score * 2)));
+        const color = `rgb(${red}, ${green}, 0)`;
+
+        const circle = L.circle([lat, lng], {
+          color: color,
+          fillColor: color,
+          fillOpacity: 0.6,
+          radius: 2000,
+        }).addTo(map);
+
+        let popupStr = ""
+        // for (let town in weightedresults) {
+          // for (let targetTown in town) {
+            // for (let metric in weightedResults[town][targetTown]) {
+            //   if (isNaN(weights[metric])) {
+    
+            //   }
+                // else {
+
+
+
+                // }
+
+          // }
+
+        // }
+
+        // Attach a popup to the circle with the score
+        circle.bindPopup(`Score: ${score.toFixed(2)}`);
+        circle.on('mouseover', function (e) {
+          this.openPopup();
+        });
+        circle.on('mouseout', function (e) {
+          this.closePopup();
+        });
+      }
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+      return () => {
+        map.remove();
+      };
+    }, [town, data]);
+
+    return <div className ="w-[30vh] h-[30vh]" ref={mapRef}></div>;
+};
+ // Re-run the effect whenever the weights change
+
+  // return <div ref={mapRef} className="w-[30vh] h-[30vh]"></div>;
+
+  useEffect(() => {
+
+    calculateRanking()
+  }, [])
 
   const calculateRanking = () => {
     const orderedResults = {};
-    const results = {
-      Invercargill: {
-        Cromwell: {
-          wind_score: 0.009801594005568952,
-          pressure_score: 0.010659595511681216,
-          density_score: 0.017142629387204376,
-          altitude_score: 0.9523809523809523,
-          woodburner_score: 0.02820745372643021,
-          total_score: 1.0181922250118371,
-        },
-        Masterton: {
-          wind_score: 0.07539834478481838,
-          pressure_score: 0.013869741536417063,
-          density_score: 0.2323579700450593,
-          altitude_score: 0.1984126984126984,
-          woodburner_score: 0.2020504667637993,
-          total_score: 0.7220892215427924,
-        },
-        Reefton: {
-          wind_score: 0.02933791202874373,
-          pressure_score: 0.015119790699094873,
-          density_score: 0.13066528570567998,
-          altitude_score: 0.42063492063492064,
-          woodburner_score: 0.3436260160331387,
-          total_score: 0.939383925101578,
-        },
-      },
-      Cromwell: {
-        Invercargill: {
-          wind_score: 0.009801594005568952,
-          pressure_score: 0.010659595511681216,
-          density_score: 0.017142629387204376,
-          altitude_score: 0.9523809523809523,
-          woodburner_score: 0.02820745372643021,
-          total_score: 1.0181922250118371,
-        },
-        Masterton: {
-          wind_score: 0.07522248936866244,
-          pressure_score: 0.024186632790616443,
-          density_score: 0.30134574273742615,
-          altitude_score: 0.7063492063492064,
-          woodburner_score: 0.5869215065186846,
-          total_score: 1.694025577764596,
-        },
-        Reefton: {
-          wind_score: 0.03031406412288818,
-          pressure_score: 0.011613772582161331,
-          density_score: 0.4030384270768054,
-          altitude_score: 0.48412698412698413,
-          woodburner_score: 0.041245023721746536,
-          total_score: 0.9703382716305855,
-        },
-      },
-      Masterton: {
-        Invercargill: {
-          wind_score: 0.07539834478481838,
-          pressure_score: 0.013869741536417063,
-          density_score: 0.2323579700450593,
-          altitude_score: 0.1984126984126984,
-          woodburner_score: 0.2020504667637993,
-          total_score: 0.7220892215427924,
-        },
-        Cromwell: {
-          wind_score: 0.07522248936866244,
-          pressure_score: 0.024186632790616443,
-          density_score: 0.30134574273742615,
-          altitude_score: 0.7063492063492064,
-          woodburner_score: 0.5869215065186846,
-          total_score: 1.694025577764596,
-        },
-        Reefton: {
-          wind_score: 0.08953179980960459,
-          pressure_score: 0.027157916149414593,
-          density_score: 0.4491536578303103,
-          altitude_score: 0.1746031746031746,
-          woodburner_score: 0.13259798931562256,
-          total_score: 0.8730445377081266,
-        },
-      },
-      Reefton: {
-        Invercargill: {
-          wind_score: 0.02933791202874373,
-          pressure_score: 0.015119790699094873,
-          density_score: 0.13066528570567998,
-          altitude_score: 0.42063492063492064,
-          woodburner_score: 0.3436260160331387,
-          total_score: 0.939383925101578,
-        },
-        Cromwell: {
-          wind_score: 0.03031406412288818,
-          pressure_score: 0.011613772582161331,
-          density_score: 0.4030384270768054,
-          altitude_score: 0.48412698412698413,
-          woodburner_score: 0.041245023721746536,
-          total_score: 0.9703382716305855,
-        },
-        Masterton: {
-          wind_score: 0.08953179980960459,
-          pressure_score: 0.027157916149414593,
-          density_score: 0.4491536578303103,
-          altitude_score: 0.1746031746031746,
-          woodburner_score: 0.13259798931562256,
-          total_score: 0.8730445377081266,
-        },
-      },
-    };
-
     for (let targetTown in results) {
       orderedResults[targetTown] = {};
       for (let childName in results[targetTown]) {
         let scores = results[targetTown][childName];
         scores.total_score =
-          scores.wind_score * weights.windSpeed +
-          scores.pressure_score * weights.atmosphericPressure +
-          scores.density_score * weights.populationDensity +
-          scores.altitude_score * weights.altitude +
-          scores.woodburner_score * weights.woodBurnerDensity;
+          scores.wind_score * weights.wind_score +
+          scores.pressure_score * weights.pressure_score +
+          scores.density_score * weights.density_score +
+          scores.altitude_score * weights.altitude_score +
+          scores.woodburner_score * weights.woodburner_score;
         console.log(scores, childName);
         orderedResults[targetTown][childName] = scores.total_score;
       }
@@ -411,6 +340,7 @@ function App() {
       return updatedWeights;
     });
     calculateRanking();
+
   };
 
   const resetToDefaults = () => {
@@ -446,46 +376,7 @@ function App() {
     return heatmapData;
   }
 
-  //   const getHeatmapData = (selectedTown) => {
-  //     const data = [];
-  //     for (let town in results[selectedTown]) {
-  //       const score = results[selectedTown][town].total_score;
-  //       console.log(town);
-  //       const [lat, lng] = townCoordinates[town];
-  //       data.push([lat, lng, score]);
-  //     }
-  //     return data;
-  //   };
 
-  //   // This is a custom component that adds the heatmap layer to the Leaflet map
-  //   function HeatmapLayer({ data }) {
-  //     const map = useMap();
-
-  //     React.useEffect(() => {
-  //       if (!map) return;
-
-  //       // Create the heatmap layer
-  //       const heatmapLayer = new window.HeatmapOverlay({
-  //         radius: 0.5,
-  //         maxOpacity: 0.8,
-  //         scaleRadius: true,
-  //         useLocalExtrema: true,
-  //         latField: "lat",
-  //         lngField: "lng",
-  //         valueField: "value",
-  //       });
-
-  //       // Add heatmap layer to the map
-  //       map.addLayer(heatmapLayer);
-  //       heatmapLayer.setData({ max: 10, data: data }); // Here max is the maximum value for total_score. Adjust accordingly.
-
-  //       return () => {
-  //         map.removeLayer(heatmapLayer);
-  //       };
-  //     }, [map, data]);
-
-  //     return null;
-  //   }
 
   return (
     <div className="app flex h-screen p-4">
@@ -502,25 +393,18 @@ function App() {
         ))}
         <TotalLabel total={totalWeight} className="mb-2" />
         <button
-          onClick={calculateRanking}
-          disabled={totalWeight.toFixed(2) !== "1.00"}
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-        >
-          Calculate Ranking
-        </button>
-        <button
           onClick={resetToDefaults}
           className="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500 mt-2"
         >
           Reset to Defaults
         </button>
-        <div className="mt-4">
+        <div className="mt-4 ">
           <TownSelector onChange={setSelectedTown} />
         </div>
       </div>
 
       {/* Right side: Maps */}
-      <div className="w-1/2 grid grid-cols-2 gap-x-4 gap-y-2 h-[50vh]">
+      {isDataProcessed && (<div className="w-1/2 grid grid-cols-2 gap-x-4 gap-y-2 h-[50vh]">
         <div className="flex ml-auto mt-auto">
           <MyMap town="Invercargill" data={results["Invercargill"]} />
         </div>
@@ -530,10 +414,10 @@ function App() {
         <div className="flex ml-auto mb-auto">
           <MyMap town="Masterton" data={results["Masterton"]} />
         </div>
-        <div className="flex mr-auto mb-auto">
+        <div className="flex mr-auto mb-autov">
           <MyMap town="Reefton" data={results["Reefton"]} />
         </div>
-      </div>
+      </div>)}
     </div>
   );
 }

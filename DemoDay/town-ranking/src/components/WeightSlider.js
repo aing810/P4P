@@ -1,20 +1,22 @@
 import React from "react";
+import Slider from "@mui/material/Slider";
+import Typography from "@mui/material/Typography";
 
 function WeightSlider({ name, value, onChange }) {
   return (
-    <div className="slider-container flex flex-col items-start space-y-2">
-      <label className="text-xl mb-1">{name}</label>
+    <div className="slider-container flex flex-col items-start space-y-2 bg-white p-4 rounded-md shadow-md">
+      <Typography variant="h6" className="text-lg font-semibold mb-1">
+        {name}
+      </Typography>
       <div className="flex items-center space-x-2 w-full">
-        <input
-          type="range"
-          min="0"
-          max="1"
-          step="0.01"
-          value={value}
-          onChange={(e) => onChange(name, parseFloat(e.target.value))}
+        <Slider
+          value={value * 100} // MUI slider expects values between 0 and 100
+          onChange={(event, newValue) => onChange(name, newValue / 100)}
+          valueLabelDisplay="auto"
+          aria-labelledby="continuous-slider"
           className="w-full"
         />
-        <span>{value.toFixed(2)}</span>
+        <span className="text-sm font-medium">{value.toFixed(2)}</span>
       </div>
     </div>
   );
