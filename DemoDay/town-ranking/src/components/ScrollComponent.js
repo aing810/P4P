@@ -1,4 +1,3 @@
-// ScrollComponent.js
 import React, { forwardRef, useImperativeHandle, useRef } from "react";
 import { animated, useSpring } from "react-spring";
 
@@ -34,19 +33,22 @@ const ScrollComponent = forwardRef(({ pages }, ref) => {
     scrollLeft,
     scrollRight,
   }));
+
   return (
-    <div className="relative overflow-hidden">
+    <div className="relative w-full overflow-hidden">
       <div
         ref={scrollRef}
-        className="flex overflow-x-hidden scroll-snap-x-mandatory w-full" // Tailwind classes and some existing styles
+        className="flex w-full overflow-x-auto scroll-snap-x-mandatory" // Ensuring full width and correct overflow settings
+        style={{ scrollBehavior: "smooth" }} // Optional: for smooth scrolling
       >
         {pages.map((page, index) => (
           <animated.div
             key={index}
+            className="flex-shrink-0" // Prevent flex items from shrinking
             style={{
               scrollSnapAlign: "start",
-              width: "100vw",
-              flexShrink: 0,
+              width: "100%", // Explicit width set
+              flexShrink: 0, // Ensuring it doesn’t shrink
               transform: offset.to((o) => `translateX(${o}px)`),
             }}
           >
