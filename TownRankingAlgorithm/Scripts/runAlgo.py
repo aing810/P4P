@@ -2,15 +2,14 @@
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 from scipy.stats import wasserstein_distance
-from scipy.stats import ks_2samp
 import numpy as np
 import pprint 
+import argparse
+import json
+#     # Perform the Kolmogorov-Smirnov (KS) test between two distributions
+#     ks_statistic, p_value = ks_2samp(data1, data2)
 
-def compare_distributions_KS(data1, data2):
-    # Perform the Kolmogorov-Smirnov (KS) test between two distributions
-    ks_statistic, p_value = ks_2samp(data1, data2)
-
-    return ks_statistic, p_value
+#     return ks_statistic, p_value
 
 def earthmover_distance(data1, data2):
     # Compute the Earth Mover's distance (Wasserstein distance) between two distributions
@@ -47,285 +46,44 @@ def calculate_town_rankings(town_names, town_wind, town_pressure, town_density, 
 
 
     return results
-#Town Population Data
 
-def calculate_isolated_rankings(town_names, town_wind, town_pressure, town_density, town_altitude, town_woodburner):
+
+def calculate_weightings(results):
     """
-    This function isolates a weighting for a feature to 1 and the rest to 0, and runs the ranking for each metadata type.
+    Calculate the weighting for each score type based on the number of correct predictions, excluding 'total_score'.
+
+    Parameters:
+    results (dict): A dictionary containing the correct and incorrect counts for each score type.
+
+    Returns:
+    dict: A dictionary containing the weightings for each score type.
     """
-    # Metadata types and their corresponding data.
-    metadata_types = {
-        "wind": town_wind,
-        "pressure": town_pressure,
-        "density": town_density,
-        "altitude": town_altitude,
-        "woodburner": town_woodburner
-    }
 
-    # Store the results for each metadata type.
-    all_results = {}
+    # Calculate the total number of correct predictions, excluding 'total_score'
+    total_correct = sum([score['correct'] for score_type, score in results.items() if score_type != 'total_score'])
 
-    for metadata_type, town_data in metadata_types.items():
-        # Reset weights
-        wind_weight, pressure_weight, density_weight, altitude_weight, woodburner_weight = [0] * 5
+    # Initialize a dictionary to hold the weightings
+    weightings = {}
 
-        # Set the current metadata weight to 1
-        if metadata_type == "wind":
-            wind_weight = 1
-        elif metadata_type == "pressure":
-            pressure_weight = 1
-        elif metadata_type == "density":
-            density_weight = 1
-        elif metadata_type == "altitude":
-            altitude_weight = 1
-        elif metadata_type == "woodburner":
-            woodburner_weight = 1
+    # Calculate the weighting for each score type, excluding 'total_score'
+    for score_type, counts in results.items():
+        # Skip the 'total_score'
+        if score_type == 'total_score':
+            continue
 
-        # Calculate rankings with the isolated weight
-        results = {}
+        correct_count = counts['correct']
 
-        for target_town in town_names:
-            scores = {
-                source_town: (
-                    wind_weight * earthmover_distance(town_wind[source_town], town_wind[target_town]) +
-                    pressure_weight * earthmover_distance(town_pressure[source_town], town_pressure[target_town]) +
-                    density_weight * difference(town_density[source_town], town_density[target_town],
-                                                max(town_density.values()), min(town_density.values())) +
-                    altitude_weight * difference(town_altitude[source_town], town_altitude[target_town],
-                                                 max(town_altitude.values()), min(town_altitude.values())) +
-                    woodburner_weight * difference(town_woodburner[source_town], town_woodburner[target_town],
-                                                   max(town_woodburner.values()), min(town_woodburner.values()))
-                )
-                for source_town in town_names if source_town != target_town
-            }
+        # Avoid division by zero if total_correct is 0
+        if total_correct > 0:
+            weight = correct_count / total_correct
+        else:
+            weight = 0
 
-            # You might want to aggregate or process these scores further depending on your requirement.
-            # For example, you might want to sum them, find an average, or even find the town with the maximum/minimum score.
-            # For now, we are just collecting the scores.
-            results[target_town] = scores
+        weightings[score_type] = weight
 
-        # Store the results for the current metadata type
-        all_results[metadata_type] = results
-
-    return all_results  # This dictionary contains the results isolated by each metadata type.
-
-def calculate_detailed_isolated_rankings(town_names, town_features):
-    """
-    Calculate scores for each town compared to every other, isolating each feature.
-
-    :param town_names: List of all town names.
-    :param town_features: Dictionary containing feature data for all towns.
-    :return: Dictionary containing detailed results.
-    """
-    # List of features
-    features = ["wind", "pressure", "density", "altitude", "woodburner"]
-
-    # Store the results for each town's comparisons.
-    all_results = {town: {} for town in town_names}
-
-    for target_town in town_names:
-        for compared_town in town_names:
-            if target_town != compared_town:
-                comparison_scores = {f"{feature}_score": 0 for feature in features}  # Initialize scores
-
-                for feature in features:
-                    # Calculate the score component for this feature.
-                    data = town_features[feature]
-                    if feature in ["wind", "pressure"]:  # These use the earthmover_distance function.
-                        score = earthmover_distance(data[target_town], data[compared_town])
-                    else:  # Other features use the difference function.
-                        max_value = max(data.values())
-                        min_value = min(data.values())
-                        score = difference(data[target_town], data[compared_town], max_value, min_value)
-
-                    comparison_scores[f"{feature}_score"] = score  # Assign the calculated score
-
-                # Sum all the individual feature scores to get the total score for this comparison.
-                comparison_scores["total_score"] = sum(comparison_scores.values())
-
-                # Add this comparison to the results.
-                all_results[target_town][compared_town] = comparison_scores
-
-    return all_results  # This dictionary contains the detailed results for each town comparison.
-
-# Note: This function assumes the presence of the other functions and data structures used in your original script, 
-# such as earthmover_distance, difference, and the data dictionaries for each town (town_features).
-# It should be placed in the same script or context where these elements are available.
-
-# Note: This function assumes the presence of the other functions and data structures used in your original script, 
-# such as earthmover_distance, difference, and the data dictionaries for each town (town_features).
-# It should be placed in the same script or context where these elements are available.
+    return weightings
 
 
-cromwell_pop = 7010
-masterton_pop = 22400
-invercargill_pop = 49800
-reefton_pop = 930
-wellington_pop = 111759
-mangere_pop = 163572
-#https://nzdotstat.stats.govt.nz/wbos/Index.aspx?
-
-cromwell_area = 15.63 #km²
-masterton_area = 22.5 #km²
-invercargill_area = 62.95 #km²
-reefton_area = 2.63 #km²
-wellington_area = 51.46 #km²
-mangere_area = 159.73 #km^2
-
-cromwell_density = cromwell_pop/cromwell_area
-masterton_density = masterton_pop/masterton_area
-invercargill_density = invercargill_pop/invercargill_area
-reefton_density = reefton_pop/reefton_area
-wellington_density = wellington_pop/wellington_area
-mangere_density = mangere_pop/mangere_area
-
-#https://statsnz.maps.arcgis.com/apps/webappviewer/index.html?id=6f49867abe464f86ac7526552fe19787
-
-# Population density for each town
-town_density = {
-    'Invercargill': invercargill_density,
-    'Cromwell': cromwell_density,
-    'Masterton': masterton_density,
-    'Reefton': reefton_density, 
-}
-
-
-# Print population densities
-print("Population Density of Cromwell:", cromwell_density, "people/km²")
-print("Population Density of Masterton:", masterton_density, "people/km²")
-print("Population Density of Invercargill:", invercargill_density, "people/km²")
-print("Population Density of Reefton:", reefton_density, "people/km²")
-
-#Town Altitude
-#https://en-nz.topographic-map.com
-
-cromwell_altitude = 396
-masterton_altitude = 111
-invercargill_altitude = 18
-reefton_altitude = 195
-wellington_altitude = 7
-mangere_altitude = 13
-
-town_altitude = {
-    'Invercargill': invercargill_altitude,
-    'Cromwell': cromwell_altitude,
-    'Masterton': masterton_altitude,
-    'Reefton': reefton_altitude,
-}
-
-
-
-#Town Population Data
-
-cromwell_pop = 7010
-masterton_pop = 22400
-invercargill_pop = 49800
-reefton_pop = 930
-wellington_pop = 111759
-mangere_pop = 163572
-#https://nzdotstat.stats.govt.nz/wbos/Index.aspx?
-
-cromwell_area = 15.63 #km²
-masterton_area = 22.5 #km²
-invercargill_area = 62.95 #km²
-reefton_area = 2.63 #km²
-
-cromwell_density = cromwell_pop/cromwell_area
-masterton_density = masterton_pop/masterton_area
-invercargill_density = invercargill_pop/invercargill_area
-reefton_density = reefton_pop/reefton_area
-
-#https://statsnz.maps.arcgis.com/apps/webappviewer/index.html?id=6f49867abe464f86ac7526552fe19787
-
-# Population density for each town
-town_density = {
-    'Invercargill': invercargill_density,
-    'Cromwell': cromwell_density,
-    'Masterton': masterton_density,
-    'Reefton': reefton_density,
-}
-# Print population densities
-
-#Wood Burners
-invercargill_woodburner=10503
-masterton_woodburner=6648
-reefton_woodburner=477
-cromwell_woodburner=1350
-
-cromwell_area = 15.63 #km²
-masterton_area = 22.5 #km²
-invercargill_area = 62.95 #km²
-reefton_area = 2.63 #km²
-
-invercargill_woodburner_density = invercargill_woodburner/invercargill_area
-masterton_woodburner_density = masterton_woodburner/masterton_area
-cromwell_woodburner_density = cromwell_woodburner/cromwell_area
-reefton_woodburner_density = reefton_woodburner/reefton_area
-
-town_woodburner = {
-    'Invercargill': invercargill_woodburner_density,
-    'Cromwell': cromwell_woodburner_density,
-    'Masterton': masterton_woodburner_density,
-    'Reefton': reefton_woodburner_density
-}
-
-ground_truth = {
-    'Invercargill': ['Cromwell', 'Reefton', 'Masterton'],
-    'Cromwell': ['Invercargill', 'Reefton', 'Masterton'],
-    'Masterton': ['Invercargill', 'Cromwell', 'Reefton'],
-    'Reefton': ['Invercargill', 'Cromwell', 'Masterton']
-  }
-
-
-town_names = ['Invercargill', 'Cromwell', 'Masterton', 'Reefton']
-#'Mangere', 'Wellington'
-#Path to dataset
-file_path_template = './Metadata/{}_{}.csv'
-
-town_wind = {}
-town_pressure = {}
-
-# Load the data for each town
-for town in town_names:
-    file_path = file_path_template.format(town, "Wind")
-    df = pd.read_csv(file_path)
-    town_wind[town] = df['Speed(m/s)'].dropna()
-
-    # Normalize wind speed data using Min-Max normalization to range [0, 1]
-    scaler_wind = MinMaxScaler()
-    town_wind[town] = scaler_wind.fit_transform(town_wind[town].values.reshape(-1, 1)).flatten()
-
-    file_path = file_path_template.format(town, "Pressure")
-    df = pd.read_csv(file_path)
-    town_pressure[town] = df['Pstn(hPa)'].dropna()
-
-    # Normalize pressure data using Min-Max normalization to range [0, 1]
-    scaler_pressure = MinMaxScaler()
-    town_pressure[town] = scaler_pressure.fit_transform(town_pressure[town].values.reshape(-1, 1)).flatten()
-
-
-def calculate_town_rankings(town_names, town_wind, town_pressure, town_density, town_altitude,town_woodburner,
-                            wind_weight, pressure_weight, density_weight, altitude_weight,woodburner_weight):
-    results = {}
-
-    for target_town in town_names:
-        scores = {
-            source_town: (
-                wind_weight * earthmover_distance(town_wind[source_town], town_wind[target_town]) +
-                pressure_weight * earthmover_distance(town_pressure[source_town], town_pressure[target_town]) +
-                density_weight * difference(town_density[source_town],town_density[target_town],max(town_density.values()),min(town_density.values())) +
-                altitude_weight * difference(town_altitude[source_town],town_altitude[target_town],max(town_altitude.values()),min(town_altitude.values())) +
-                woodburner_weight * difference(town_woodburner[source_town],town_woodburner[target_town],max(town_woodburner.values()),min(town_woodburner.values()))
-                # difference(town_cars[source_town], town_cars[target_town], max(town_cars.values()),min(town_cars.values()))
-                )
-            for source_town in town_names if source_town != target_town
-        }
-
-        results[target_town] = sorted(scores.items(), key=lambda x: x[1])
-
-
-
-    return results
 
 def calculate_detailed_isolated_rankings_direct(town_names, town_wind, town_pressure, town_density, town_altitude, town_woodburner):
     """
@@ -381,100 +139,17 @@ def calculate_detailed_isolated_rankings_direct(town_names, town_wind, town_pres
 
     return all_results  # This dictionary contains the detailed results for each town comparison.
 
-# Note: This function assumes the presence of the other functions used in your original script, 
-# such as earthmover_distance and difference.
-# It should be placed in the same script or context where these elements are available.
-def print_neatly(detailed_results):
-    for town, comparisons in detailed_results.items():
-        print(f"\n{'='*40}\nResults for {town}:\n{'='*40}")
-        
-        # Iterating through each town's comparison results
-        for compared_town, features in comparisons.items():
-            print(f"\nComparing with {compared_town}:")
-            
-            # Iterating through each feature score
-            for feature, score in features.items():
-                # Formatting the feature for better readability (removing underscores and capitalizing)
-                formatted_feature = feature.replace('_', ' ').title()
-                print(f"  {formatted_feature}: {score:.6f}")  # Print scores with six decimal places for precision
-
-            print("-"*40)  # Separator for readability
-
-        print("\n")  # Blank line for separation before the next town's results
-    
 
 
-
-wind_weight = 0.3125
-pressure_weight = 0.21875
-density_weight = 0.3125
-altitude_weight = 0.03125
-woodburner_weight = 0.125
-
-result_rankings = calculate_town_rankings(town_names, town_wind, town_pressure, town_density, town_altitude,town_woodburner,
-                                              wind_weight, pressure_weight, density_weight, altitude_weight, woodburner_weight)
-
-weightingsOutput = calculate_detailed_isolated_rankings_direct(town_names, town_wind, town_pressure, town_density, town_altitude, town_woodburner)
-print("weightings output\n", weightingsOutput)
-
-print_neatly(weightingsOutput)
-
-for target_town, rankings in result_rankings.items():
-    print(f"Ranking of source towns for target town '{target_town}':")
-    for rank, (source_town, score) in enumerate(rankings, start=1):
-        print(f"{rank}. {source_town} (Score: {score:.4f})")
-    print("\n")
-
-
-# def generate_feature_rankings(detailed_results):
-#     # Initialize a dictionary to hold the rankings for each feature.
-#     feature_rankings = {}
-
-#     # Step 1: Generate feature-specific rankings.
-#     for feature in detailed_results[next(iter(detailed_results))]:  # Extract feature names from the first town's data.
-#         feature_rankings[feature] = {}
-#         print(feature_rankings,'feature rankings')
-#         for town, comparisons in detailed_results.items():
-#             # We're creating a list of (compared_town, score) pairs.
-#             scored_comparisons = [(compared_town, scores[feature]) for compared_town, scores in comparisons.items()]
-
-#             # Step 2: Sort the towns based on the scores in ascending order.
-#             sorted_comparisons = sorted(scored_comparisons, key=lambda x: x[1])  # For ascending order.
-
-#             # Extracting only the town names after sorting.
-#             feature_rankings[feature][town] = [compared_town for compared_town, score in sorted_comparisons]
-
-#     # Step 3: Store in separate objects.
-#     # Here, we're creating separate objects for each feature's rankings.
-#     wind_ranking = feature_rankings.get('wind_score', {})
-#     pressure_ranking = feature_rankings.get('pressure_score', {})
-#     density_ranking = feature_rankings.get('density_score', {})
-#     altitude_ranking = feature_rankings.get('altitude_score', {})
-#     woodburner_ranking = feature_rankings.get('woodburner_score', {})
-
-#     # Each of these variables (wind_ranking, pressure_ranking, etc.) is now an object that holds the rankings for a specific feature.
-#     # They are in the same format as your ground_truth object and ready for comparison.
-
-#     return wind_ranking, pressure_ranking, density_ranking, altitude_ranking, woodburner_ranking
-
-# Assuming `detailed_results` contains your detailed comparison data.
-# wind_ranking, pressure_ranking, density_ranking, altitude_ranking, woodburner_ranking = generate_feature_rankings(weightingsOutput)
-
-# Step 4: Now, you can compare each of these ranking objects with your ground truth.
-# You need to define the logic for this comparison based on how you determine the match between the generated rankings and the ground truth.
 
 def generate_feature_rankings(detailed_results):
     feature_rankings = {}
 
     for feature in detailed_results[next(iter(detailed_results))]:  # Extract feature names from the first town's data.
         feature_rankings[feature] = {}
-        print(feature, 'feature')
 
         for town, comparisons in detailed_results.items():
-            # Create a list of (compared_town, score) pairs for the current feature.
-            
-            print(town, 'town', feature, 'feature')
-            print(comparisons.items(),'comparisons')
+            # Create a list of (compared_town, score) pairs for the current feature
             scored_comparisons = [(compared_town, scores[feature]) for compared_town, scores in comparisons.items()]
 
             # Sort the towns based on the scores in ascending order.
@@ -485,18 +160,7 @@ def generate_feature_rankings(detailed_results):
 
     return feature_rankings
 
-# Function to generate the ranking objects for each feature.
-def create_ranking_objects(feature_rankings):
-    ranking_objects = {}
-    for feature, rankings in feature_rankings.items():
-        print(feature, rankings)
-        # Create a ranking object for this feature.
-        ranking_object = {}
-        for town, ranked_towns in rankings.items():
-            ranking_object[town] = ranked_towns  # Here, ranked_towns is a list of town names in order of ranking.
-        ranking_objects[feature] = ranking_object
-        print(ranking_objects,'ranking objects')
-    return ranking_objects
+
 
 
 # Generate the feature-specific rankings.
@@ -558,14 +222,7 @@ def process_data_for_rankings(data):
 
 
  # Process the data to get restructured data and rankings
-restructured_data, rankings_by_score_type = process_data_for_rankings(weightingsOutput)
 
-    # Pretty-printing the results
-print("Restructured Data:")
-pprint.pprint(restructured_data)
-
-print("\nRankings by Score Type:")
-pprint.pprint(rankings_by_score_type)
 
 
 def compare_with_ground_truth(rankings, ground_truth):
@@ -608,47 +265,191 @@ def compare_with_ground_truth(rankings, ground_truth):
     return comparison_results
 
 
-# Call the function with the appropriate data
-results = compare_with_ground_truth(rankings_by_score_type, ground_truth)
-
-pprint.pprint(results)
 
 
-def calculate_weightings(results):
+def add_new_town_data(new_town_name, file_path_template, town_names, town_wind, town_pressure, town_woodburner, town_altitude, town_density, WindWeight, PressureWeight, PopDensityWeight, AltitudeWeight, WoodBurnerWeight):
     """
-    Calculate the weighting for each score type based on the number of correct predictions, excluding 'total_score'.
+    Load data for a new town and add it to the existing town data structures.
 
-    Parameters:
-    results (dict): A dictionary containing the correct and incorrect counts for each score type.
-
-    Returns:
-    dict: A dictionary containing the weightings for each score type.
+    :param new_town_name: String, the name of the new town.
+    :param file_path_template: String, the file path template used to locate the data files.
+    :param town_names: List, the names of the towns.
+    :param town_wind: Dictionary, contains wind data for the towns.
+    :param town_pressure: Dictionary, contains pressure data for the towns.
+    :param town_woodburner: Dictionary, contains woodburner data for the towns.
+    :param town_altitude: Dictionary, contains altitude data for the towns.
+    :param town_density: Dictionary, contains density data for the towns.
     """
+    # Check if town already exists
+    if new_town_name in town_names:
+        print(f"Town {new_town_name} already exists.")
+        return
 
-    # Calculate the total number of correct predictions, excluding 'total_score'
-    total_correct = sum([score['correct'] for score_type, score in results.items() if score_type != 'total_score'])
+    print(f"Adding {new_town_name} to the dataset...")
 
-    # Initialize a dictionary to hold the weightings
-    weightings = {}
+    # Append the new town's name to the list of towns
+    town_names.append(new_town_name)
 
-    # Calculate the weighting for each score type, excluding 'total_score'
-    for score_type, counts in results.items():
-        # Skip the 'total_score'
-        if score_type == 'total_score':
-            continue
+    # ... [rest of your existing code for loading data] ...
 
-        correct_count = counts['correct']
+    print(f"{new_town_name} added successfully.")
 
-        # Avoid division by zero if total_correct is 0
-        if total_correct > 0:
-            weight = correct_count / total_correct
-        else:
-            weight = 0
+    print(f"Loading data for {new_town_name}...")
 
-        weightings[score_type] = weight
+    # Load and process wind data
+    file_path = file_path_template.format(new_town_name, "Wind")
+    df = pd.read_csv(file_path)
+    wind_data = df['Speed(m/s)'].dropna()
+    scaler_wind = MinMaxScaler()
+    normalized_wind_data = scaler_wind.fit_transform(wind_data.values.reshape(-1, 1)).flatten()
+    town_wind[new_town_name] = normalized_wind_data
 
-    return weightings
-# Call the function with the comparison results
-weightings = calculate_weightings(results)
+    # Load and process pressure data
+    file_path = file_path_template.format(new_town_name, "Pressure")
+    df = pd.read_csv(file_path)
+    pressure_data = df['Pstn(hPa)'].dropna()
+    scaler_pressure = MinMaxScaler()
+    normalized_pressure_data = scaler_pressure.fit_transform(pressure_data.values.reshape(-1, 1)).flatten()
+    town_pressure[new_town_name] = normalized_pressure_data
 
-pprint.pprint(weightings)
+    # Load and process discrete metadata
+    file_path = file_path_template.format(new_town_name, "discrete_metadata")
+    df = pd.read_csv(file_path)
+    town_altitude[new_town_name] = df['altitude'].iloc[0]
+    town_area = df['area'].iloc[0]
+    population_density = df['population'].iloc[0] / town_area
+    woodburners_per_area = df["woodburners"].iloc[0] / town_area
+    town_density[new_town_name] = population_density
+    town_woodburner[new_town_name] = woodburners_per_area
+
+    print(f"Data for {new_town_name} has been loaded and processed.")
+
+    result_rankings = calculate_town_rankings(town_names, town_wind, town_pressure, town_density, town_altitude,town_woodburner,
+                                              WindWeight, PressureWeight, PopDensityWeight, AltitudeWeight, WoodBurnerWeight)
+    # pprint.pprint(result_rankings)
+
+    for target_town, rankings in result_rankings.items():
+        print(f"Ranking of source towns for target town '{target_town}':")
+        for rank, (source_town, score) in enumerate(rankings, start=1):
+            print(f"{rank}. {source_town} (Score: {score:.4f})")
+        print("\n")
+
+    newUnweightedObject = calculate_detailed_isolated_rankings_direct(town_names, town_wind, town_pressure, town_density, town_altitude, town_woodburner)
+    
+    pprint.pprint(newUnweightedObject)
+        # Specify the file name
+    output_file = './Scripts/newTownResultsObject.json'
+
+    # Writing to a JSON file
+    with open(output_file, 'w') as json_file:
+        json.dump(newUnweightedObject, json_file, indent=4)
+
+
+
+
+        # break
+
+def main_function():
+    ground_truth = {
+        'Invercargill': ['Cromwell', 'Reefton', 'Masterton'],
+        'Cromwell': ['Invercargill', 'Reefton', 'Masterton'],
+        'Masterton': ['Invercargill', 'Cromwell', 'Reefton'],
+        'Reefton': ['Invercargill', 'Cromwell', 'Masterton']
+    }
+
+
+    town_names = ['Invercargill', 'Cromwell', 'Masterton', 'Reefton']
+    #'Mangere', 'Wellington'
+    #Path to dataset
+    file_path_template = './Metadata/{}_{}.csv'
+
+    town_wind = {}
+    town_pressure = {}
+    town_woodburner = {}
+    town_altitude = {}
+    town_density = {}
+    # Load the data for each town
+    for town in town_names:
+        file_path = file_path_template.format(town, "Wind")
+        df = pd.read_csv(file_path)
+        town_wind[town] = df['Speed(m/s)'].dropna()
+
+        # Normalize wind speed data using Min-Max normalization to range [0, 1]
+        scaler_wind = MinMaxScaler()
+        town_wind[town] = scaler_wind.fit_transform(town_wind[town].values.reshape(-1, 1)).flatten()
+
+        file_path = file_path_template.format(town, "Pressure")
+        df = pd.read_csv(file_path)
+        town_pressure[town] = df['Pstn(hPa)'].dropna()
+
+        file_path = file_path_template.format(town, "discrete_metadata")
+        df = pd.read_csv(file_path)
+        town_altitude[town] = df['altitude'].iloc[0]
+        town_area = df['area'].iloc[0]
+        town_density[town] = df['population'].iloc[0] / town_area
+        town_woodburner[town] = df["woodburners"].iloc[0] / town_area
+
+        # Normalize pressure data using Min-Max normalization to range [0, 1]
+        scaler_pressure = MinMaxScaler()
+        town_pressure[town] = scaler_pressure.fit_transform(town_pressure[town].values.reshape(-1, 1)).flatten()
+
+
+
+
+    weightingsOutput = calculate_detailed_isolated_rankings_direct(town_names, town_wind, town_pressure, town_density, town_altitude, town_woodburner)
+
+    restructured_data, rankings_by_score_type = process_data_for_rankings(weightingsOutput)
+
+    # Call the function with the appropriate data
+    results = compare_with_ground_truth(rankings_by_score_type, ground_truth)
+
+    pprint.pprint(weightingsOutput)
+
+
+    # Call the function with the comparison results
+    weightings = calculate_weightings(results)
+
+
+    # Round the weights to 4 decimal places
+    AltitudeWeight = round(weightings["altitude_score"], 4)
+    WindWeight = round(weightings["wind_score"], 4)
+    PressureWeight = round(weightings["pressure_score"], 4)
+    WoodBurnerWeight = round(weightings["woodburner_score"], 4)
+    PopDensityWeight = round(weightings["density_score"], 4)
+    # Print the weights and their types
+
+    result_rankings = calculate_town_rankings(town_names, town_wind, town_pressure, town_density, town_altitude,town_woodburner,
+                                                WindWeight, PressureWeight, PopDensityWeight, AltitudeWeight, WoodBurnerWeight)
+
+    # pprint.pprint(result_rankings)
+
+    for target_town, rankings in result_rankings.items():
+        print(f"Ranking of source towns for target town '{target_town}':")
+        for rank, (source_town, score) in enumerate(rankings, start=1):
+            print(f"{rank}. {source_town} (Score: {score:.4f})")
+        print("\n")
+
+
+    # Create the parser
+    parser = argparse.ArgumentParser(description='Process some town data.')
+
+    # Declare an argument (--town), type of the argument (str), and a help description.
+    parser.add_argument('--town', type=str, help='The name of the town to process')
+
+    # Parse the arguments
+    args = parser.parse_args()
+
+    # Check if the town was provided
+    if args.town:
+                print(args.town)
+                # Try to add the new town
+                add_new_town_data(args.town, file_path_template, town_names, town_wind, town_pressure, town_woodburner, town_altitude, town_density, WindWeight, PressureWeight, PopDensityWeight, AltitudeWeight, WoodBurnerWeight)
+    else:
+            # If there's any error, we catch it and inform the user, then continue
+            print(f"No argument Passed")
+
+            # If you want the script to end after one successful addition, uncomment the following line
+    print("Completed Processing")
+
+if __name__ == "__main__":
+    main_function()
