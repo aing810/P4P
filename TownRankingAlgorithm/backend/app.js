@@ -3,10 +3,13 @@ const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
+const cors = require('cors'); // Import the cors middleware
 const app = express();
 const port = 4000;
 
 app.use(express.json());
+app.use(cors()); // Use the cors middleware to enable CORS for all routes
+
 
 app.post('/town', (req, res) => {
   const townName = req.body.town;
@@ -15,50 +18,67 @@ app.post('/town', (req, res) => {
   }
 
   // Define the Python script path and the JSON output file path
-  let scriptPath = '../Scripts/newTownAddedCalled.py';
-  const outputPath = "../Scripts/newTownResultsObject.json"
+  let scriptPath = './Scripts/newTownAddedCalled.py';
 
   const townArgument = '--town';
-  const townInput = "\"" + townName  + "\""
-  // scriptPath = scriptPath + " " + townInput
+  const townInput = "\"" + townName + "\"";
 
-  console.log(townInput)
+  console.log(townInput);
   console.log(__dirname);
 
   // Check if the path exists
   fs.access(scriptPath, fs.constants.F_OK, (err) => {
     if (err) {
       console.error(`The path '${scriptPath}' does not exist.`);
+      return res.status(500).send('Error executing the Python script');
     } else {
       console.log(`The path '${scriptPath}' exists.`);
     }
-  });
-  // Call the Python script with the town name as an argumnt
-  const pythonProcess = spawn('python', [scriptPath, townArgument, townName]);
 
-  // Pipe the Python process stdout to Node.js stdout
-  pythonProcess.stdout.pipe(process.stdout);
+      // Call the Python script with the town name as an argument
+      const pythonProcess = spawn('python', [scriptPath, townArgument, townName]);
 
-  // Pipe the Python process stderr to Node.js stderr (optional)
-  pythonProcess.stderr.pipe(process.stderr);
+      // Capture the stdout and stderr from the Python script
+      let scriptOutput = '';
+      let scriptError = '';
 
-  process.on('close', (code) => {
-    if (code !== 0) {
-      return res.status(500).send('Error executing the Python script');
-    }
+      pythonProcess.stdout.on('data', (data) => {
+        scriptOutput += data.toString();
+      });
 
-    // After script execution, read the generated JSON file
-    fs.readFile(outputPath, 'utf8', (err, data) => {
-      if (err) {
-        console.error('Error reading the file:', err);
-        return res.status(404).send('No data found for the specified town');
-      }
+      pythonProcess.stderr.on('data', (data) => {
+        scriptError += data.toString();
+      });
 
-      // Send the contents of the JSON file as a response
-      res.json(JSON.parse(data));
-    });
+      pythonProcess.on('close', (code) => {
+        if (code !== 0) {
+          console.error('Error executing the Python script:', scriptError);
+          return res.status(500).send('Error executing the Python script');
+        }
+        // // Define the path to your JSON file
+        const filePath = './Scripts/newTownResultsObject.json';
+
+        // Read the JSON file synchronously
+        try {
+          const jsonData = fs.readFileSync(filePath, 'utf8');
+
+          // Parse the JSON data into a JavaScript object
+          const jsonObject = JSON.parse(jsonData);
+
+          // Now you have the JSON data as a JavaScript object
+          console.log(jsonObject);
+          // Send the captured output as a response
+        res.json({ output: jsonObject });
+        } catch (error) {
+          console.error('Error reading or parsing the JSON file:', error);
+        }
+
+        
+      });
   });
 });
+
+
 
 app.listen(port, () => {
   console.log(`Server is running at http://localhost:${port}`);

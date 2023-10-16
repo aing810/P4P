@@ -13,6 +13,8 @@ import wind_image from "./resources/wind_bigger.png"
 import pressure_image from "./resources/pressureDist.png"
 import threeFigs from "./resources/3figs.png"
 import ImageComp from "./components/ImageComp";
+import axios from 'axios';
+
 
 
 function App() {
@@ -23,27 +25,29 @@ function App() {
     height: "95vh",
   };
 
+
+
   const resultDetailsObj = {
-    "Invercargill": { 
-        correct: ["Cromwell"], 
-        incorrect: [
-            { expected: "Reefton", got: "Masterton" }, 
-            { expected: "Masterton", got: "Reefton" }
-        ] 
+    "Invercargill": {
+      correct: ["Cromwell"],
+      incorrect: [
+        { expected: "Reefton", got: "Masterton" },
+        { expected: "Masterton", got: "Reefton" }
+      ]
     },
-    "Cromwell": { 
-        correct: ["Invercargill", "Reefton"], 
-        incorrect: [
-            { expected: "Masterton", got: "Reefton" }
-        ] 
+    "Cromwell": {
+      correct: ["Invercargill", "Reefton"],
+      incorrect: [
+        { expected: "Masterton", got: "Reefton" }
+      ]
     },
-    "Masterton": { 
-        correct: ["Invercargill", "Cromwell", "Reefton"], 
-        incorrect: []  // No incorrect matches, since all were correct
+    "Masterton": {
+      correct: ["Invercargill", "Cromwell", "Reefton"],
+      incorrect: []  // No incorrect matches, since all were correct
     },
-    "Reefton": { 
-        correct: ["Invercargill", "Cromwell", "Masterton"], 
-        incorrect: []  // No incorrect matches, since all were correct
+    "Reefton": {
+      correct: ["Invercargill", "Cromwell", "Masterton"],
+      incorrect: []  // No incorrect matches, since all were correct
     }
   }
 
@@ -186,7 +190,7 @@ function App() {
   const [weights, setWeights] = useState(defaultWeights);
   const [lastChangedMetric, setLastChangedMetric] = useState(null);
   const [rankings, setRankings] = useState({});
-  const [resultDetails, setResultDetails] = useState(null); 
+  const [resultDetails, setResultDetails] = useState(null);
   // State for the weighted results
   const [weightedResults, setWeightedResults] = useState({});
   const [selectedTown, setSelectedTown] = useState("Invercargill");
@@ -322,6 +326,20 @@ function App() {
 
     calculateRanking()
     console.log('result Details', resultDetailsObj)
+    const url = 'http://localhost:4000/town';
+    const data = {
+      town: 'Wellington'
+    };
+
+    axios.post(url, data)
+      .then(response => {
+        console.log('Response from server:', response.data);
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
+
+
   }, [])
 
   const calculateRanking = () => {
@@ -440,11 +458,11 @@ function App() {
   return (
     <div className="app flex flex-col items-center h-screen p-4 bg-gray-100 font-sans">
       <h1 className="text-4xl font-bold mb-8 text-gray-800 border-b-4 border-#285954 pb-2">Optimising Source Domain Selection for Transfer Learning in Air Quality Prediction</h1>
-  
+
       {/* Main content */}
       <div className="flex w-full max-w-7xl h-full border rounded-lg overflow-hidden shadow-lg bg-white">
         {/* Left side: Sliders and controls */}
-        <div className="flex flex-col w-1/4 border-r p-4 space-y-4"> 
+        <div className="flex flex-col w-1/4 border-r p-4 space-y-4">
           <h2 className="text-2xl font-bold text-#285954">Weightings</h2>
           {metrics.map((metric) => (
             <WeightSlider
@@ -462,14 +480,14 @@ function App() {
           >
             Reset to Defaults
           </button>
-  
+
           <div className="mt-4">
             <TownSelector onChange={setSelectedTown} selected={selectedTown} />
           </div>
         </div>
-  
+
         {/* Middle: Maps and Charts */}
-        <div className="flex flex-col w-1/2 border-r "> 
+        <div className="flex flex-col w-1/2 border-r ">
           {isDataProcessed && resultDetails && (
             <div>
               <h2 className="text-2xl font-bold text-#285954 px-4 pt-4">Towns</h2>
@@ -479,30 +497,30 @@ function App() {
                 <MyMap town="Masterton" data={results["Masterton"]} />
                 <MyMap town="Reefton" data={results["Reefton"]} />
               </div>
-              <AccuracyChart  resultDetails={resultDetails} />
+              <AccuracyChart resultDetails={resultDetails} />
             </div>
           )}
         </div>
-  
+
         {/* Right side: Dummy Data (Third column) */}
         <div className="flex flex-col w-1/4 ">
-  <h2 className="text-2xl font-bold text-#285954 px-4 pt-4">Metadata</h2>
-  <div className="dummy-content p-4"> {/* <-- Added padding here */}
-    <div className="py-2"> {/* <-- Added vertical padding for each image component */}
-      <ImageComp img={wind_image} name="Wind Speed Distribution"></ImageComp>
-    </div>
-    <div className="py-2">
-      <ImageComp img={pressure_image} name="Atmostpheric Pressure Distribution"></ImageComp>
-    </div>
-    <div className="py-2">
-      <ImageComp img={threeFigs} name="Population Density/Altitude/Woodburner Density"></ImageComp>
-    </div>
-  </div>
-</div>
+          <h2 className="text-2xl font-bold text-#285954 px-4 pt-4">Metadata</h2>
+          <div className="dummy-content p-4"> {/* <-- Added padding here */}
+            <div className="py-2"> {/* <-- Added vertical padding for each image component */}
+              <ImageComp img={wind_image} name="Wind Speed Distribution"></ImageComp>
+            </div>
+            <div className="py-2">
+              <ImageComp img={pressure_image} name="Atmostpheric Pressure Distribution"></ImageComp>
+            </div>
+            <div className="py-2">
+              <ImageComp img={threeFigs} name="Population Density/Altitude/Woodburner Density"></ImageComp>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
-  
+
 
 
 }
