@@ -1,6 +1,7 @@
 import React from "react";
 import { useGlobalContext } from "./gobalContext";
 import CSVModal from "./components/CSVModal"
+import CSVFileUploader from "./components/CSVFileUploader"
 // import CromwellUnprocessed from "./resources/CromwellUnprocessed.csv"
 import CromwellWind from "./resources/Cromwell_Wind.csv";
 import ReeftonWind from "./resources/Reefton_Wind.csv";
@@ -28,7 +29,12 @@ function PageOne() {
   const handleClick = () => {
     setSharedState({ ...sharedState, someData: "Updated Data" });
   };
-
+  const handleCSVUpload = (file) => {
+    // Here, you would handle the uploaded file
+    // For example, you could use it in a form submission or send it to a server
+    console.log("CSV file uploaded:", file);
+    // Send the file to a server or handle it according to your requirements
+  };
   return (
     <div className="overflow-hidden">
       {/* Main content */}
@@ -45,11 +51,13 @@ function PageOne() {
           <div className="w-1/3">
             <div className="flex items-center pr-4">
               <NewPageButton link="https://cliflo.niwa.co.nz/" text="Wind" />
-              <TextEntry placeholder="Wind"/>
+              <CSVFileUploader onUpload={handleCSVUpload} />
+
             </div>
             <div className="flex items-center">
               <NewPageButton link="https://cliflo.niwa.co.nz/" text="Pressure" />
-              <TextEntry placeholder="Pressure"/>
+              <CSVFileUploader onUpload={handleCSVUpload} />
+
             </div>
 
             <div className="flex items-center">

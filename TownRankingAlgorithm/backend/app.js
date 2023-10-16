@@ -12,6 +12,74 @@ const port = 4000;
 app.use(express.json());
 app.use(cors()); // Use the cors middleware to enable CORS for all routes
 
+// Set up Multer to handle file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/');
+  },
+  filename: (req, file, cb) => {
+    // Rename the uploaded file based on townName and originalname
+    const townName = req.body.townName;
+    const originalname = file.originalname.replace(/\s+/g, '_'); // Replace spaces with underscores
+    const filename = `${townName}_${originalname}`;
+    cb(null, filename);
+  },
+});
+
+
+const upload = multer({ storage });
+
+app.post('/upload-csv', upload.fields([{ name: 'wind' }, { name: 'pressure' }]), (req, res) => {
+  // Access uploaded CSV files
+  const windFile = req.files['wind'] ? req.files['wind'][0] : null; // Access 'wind' file if it exists
+  const pressureFile = req.files['pressure'] ? req.files['pressure'][0] : null; // Access 'pressure' file if it exists
+
+  // Access data points and additional parameters sent from the React frontend
+  const dataPoints = req.body.dataPoints;
+  const townName = req.body.townName;
+  const area = req.body.area;
+  const population = req.body.population;
+  const woodburnerCount = req.body.woodburnerCount;
+  const altitude = req.body.altitude;
+
+  // Handle CSV file parsing and saving
+  const savedFiles = [];
+  
+  // Process 'wind.csv' file if it exists
+  if (windFile) {
+    const windFilePath = windFile.path;
+    fs.createReadStream(windFilePath)
+      .pipe(csvParser())
+      .on('data', (row) => {
+        // Process 'wind.csv' data as needed
+      })
+      .on('end', () => {
+        console.log(`'${townName}_Wind.csv' parsed successfully.`);
+        savedFiles.push(windFilePath);
+      });
+  }
+
+  // Process 'pressure.csv' file if it exists
+  if (pressureFile) {
+    const pressureFilePath = pressureFile.path;
+    fs.createReadStream(pressureFilePath)
+      .pipe(csvParser())
+      .on('data', (row) => {
+        // Process 'pressure.csv' data as needed
+      })
+      .on('end', () => {
+        console.log(`'${townName}_Pressure.csv' parsed successfully.`);
+        savedFiles.push(pressureFilePath);
+      });
+  }
+
+  // Process data points and additional parameters as needed
+
+  // Send a response to the frontend
+  res.status(200).json({ message: 'Data received and CSV files saved.', savedFiles });
+});
+
+
 
 app.post('/town', (req, res) => {
   const townName = req.body.town;
