@@ -43,7 +43,7 @@ function App() {
         </button>
         <div
           className="overflow-hidden flex-grow relative" // This will make sure your parallax container takes full height
-          style={{ minHeight: "full" }}
+          style={{ minHeight: "850px" }}
         >
           {/* Adding Tailwind CSS class to hide scrollbar */}
           <div className="overflow-x-hidden">
