@@ -10,19 +10,37 @@ app.use(express.json());
 
 app.post('/town', (req, res) => {
   const townName = req.body.town;
-
   if (!townName) {
     return res.status(400).send('Town name is required');
   }
 
   // Define the Python script path and the JSON output file path
-  const scriptPath = '../Scripts/newTownAddedCalled.py';
+  let scriptPath = '../Scripts/newTownAddedCalled.py';
   const outputPath = "../Scripts/newTownResultsObject.json"
 
-  const townInput = "--town " + "\"" + townName  + "\""
+  const townArgument = '--town';
+  const townInput = "\"" + townName  + "\""
+  // scriptPath = scriptPath + " " + townInput
 
-  // Call the Python script with the town name as an argument
-  const process = spawn('python', [scriptPath, townInput]);
+  console.log(townInput)
+  console.log(__dirname);
+
+  // Check if the path exists
+  fs.access(scriptPath, fs.constants.F_OK, (err) => {
+    if (err) {
+      console.error(`The path '${scriptPath}' does not exist.`);
+    } else {
+      console.log(`The path '${scriptPath}' exists.`);
+    }
+  });
+  // Call the Python script with the town name as an argumnt
+  const pythonProcess = spawn('python', [scriptPath, townArgument, townName]);
+
+  // Pipe the Python process stdout to Node.js stdout
+  pythonProcess.stdout.pipe(process.stdout);
+
+  // Pipe the Python process stderr to Node.js stderr (optional)
+  pythonProcess.stderr.pipe(process.stderr);
 
   process.on('close', (code) => {
     if (code !== 0) {
