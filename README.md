@@ -2,9 +2,32 @@
 
 This repository contains code and resources for the "Transfer Learning for Air Quality Inference" project. The project is divided into two main sections: **Town Ranking Algo** and **Demo Day**. The data we use is for four New Zealand Towns: Cromwell, Invercargill, Masterton and Reefton
 
+
+## Run Instructions
+### Algorithm
+- Ensure Python > version 3.9 is installed
+- Install requirements using pip and requirements.txt
+- run all scripts from TownRankingAlgorithm directory
+- Use `python ./Scripts/runAlgo.py`
+- Running the code will output in the terminal final rankings and intermediary data
+- A town can be added using `--town` parameter given the metadata is preprocessed `python ./Scripts/runAlgo.py --town {town name}` Wellington is a preloaded example
+
+### DemoDay - Frontend
+- Navigate to DemoDay/town-ranking
+- Use `npm install` to install required packages
+- Use `npm start` to run frontend React App
+
+### - DemoDay - Backend
+- Navigate to TownRankingAlgorithm/backend
+- Use `npm install` to install required packages
+- Use `node app.js` to run frontend React App
+
+
 ## Town Ranking Algorithm
 
 The Town Ranking Algo folder includes components related to the algorithm for ranking towns based on air quality. This section comprises four main parts:
+
+
 
 ### Metadata
 
@@ -40,11 +63,24 @@ The data was collected with the settings as seen below, the station number will 
 
 ![Cliflo Data Collection](Images/clifloDataCollection.png)
 
+The downloaded file shown below will need to be opened through excel and saved as a csv as shown below.
+![Cliflo Download](Images/clifloDownloadedFile.png)
 ### Discrete data
 This is Alitude, Population Density, and Wood Burner Density data in the format of Population, Altitude, Wood Burner and Area. Altitude is collected from https://en-nz.topographic-map.com. Stats NZ was used to collect the population and wood burner data from https://www.stats.govt.nz/information-releases/statistical-area-1-dataset-for-2018-census-updated-march-2020#regional. Stats NZ GIS software was used to gather the data for area https://datafinder.stats.govt.nz/data/?geotag=global%2Foceania%2Fnew-zealand. These values are inputted in one file for each town in {town name}_discrete_metadata.csv.
+
+The same section from the statiscal area data was used for the GIS software for consistentcy.
+
+The CSV format for this data is shown as:
+
+![DiscreteMetadataFormat](Images/discreteMetadataFormat.png)
 
 
 
 ### Algorithm code and modularity
 
-Our code is modular therefore towns can be added dynamically given it is preprocessed as mentioned above. For adding metadata features 
+
+Our runAlgo.py is modular therefore towns can be added dynamically given it is preprocessed as mentioned above. For adding metadata features once the data is processed the code asks for an input and outputs the ranking with scores in the terminal. A new town is passed through using `--town {town name}` given all metadata is preprocessed and loaded.
+
+The algorithm will need adjusting if new metadata features are to be added a `town_{feature}` object will need to be created and a `FeatureWeighting` variable will also need to be created. However reading and updating these features should be simple following the same format as the current code. 
+
+
