@@ -4,6 +4,7 @@ from sklearn.preprocessing import MinMaxScaler
 from scipy.stats import wasserstein_distance
 from scipy.stats import ks_2samp
 import numpy as np
+import pprint 
 
 def compare_distributions_KS(data1, data2):
     # Perform the Kolmogorov-Smirnov (KS) test between two distributions
@@ -425,39 +426,229 @@ for target_town, rankings in result_rankings.items():
     print("\n")
 
 
+# def generate_feature_rankings(detailed_results):
+#     # Initialize a dictionary to hold the rankings for each feature.
+#     feature_rankings = {}
+
+#     # Step 1: Generate feature-specific rankings.
+#     for feature in detailed_results[next(iter(detailed_results))]:  # Extract feature names from the first town's data.
+#         feature_rankings[feature] = {}
+#         print(feature_rankings,'feature rankings')
+#         for town, comparisons in detailed_results.items():
+#             # We're creating a list of (compared_town, score) pairs.
+#             scored_comparisons = [(compared_town, scores[feature]) for compared_town, scores in comparisons.items()]
+
+#             # Step 2: Sort the towns based on the scores in ascending order.
+#             sorted_comparisons = sorted(scored_comparisons, key=lambda x: x[1])  # For ascending order.
+
+#             # Extracting only the town names after sorting.
+#             feature_rankings[feature][town] = [compared_town for compared_town, score in sorted_comparisons]
+
+#     # Step 3: Store in separate objects.
+#     # Here, we're creating separate objects for each feature's rankings.
+#     wind_ranking = feature_rankings.get('wind_score', {})
+#     pressure_ranking = feature_rankings.get('pressure_score', {})
+#     density_ranking = feature_rankings.get('density_score', {})
+#     altitude_ranking = feature_rankings.get('altitude_score', {})
+#     woodburner_ranking = feature_rankings.get('woodburner_score', {})
+
+#     # Each of these variables (wind_ranking, pressure_ranking, etc.) is now an object that holds the rankings for a specific feature.
+#     # They are in the same format as your ground_truth object and ready for comparison.
+
+#     return wind_ranking, pressure_ranking, density_ranking, altitude_ranking, woodburner_ranking
+
+# Assuming `detailed_results` contains your detailed comparison data.
+# wind_ranking, pressure_ranking, density_ranking, altitude_ranking, woodburner_ranking = generate_feature_rankings(weightingsOutput)
+
+# Step 4: Now, you can compare each of these ranking objects with your ground truth.
+# You need to define the logic for this comparison based on how you determine the match between the generated rankings and the ground truth.
+
 def generate_feature_rankings(detailed_results):
-    # Initialize a dictionary to hold the rankings for each feature.
     feature_rankings = {}
 
-    # Step 1: Generate feature-specific rankings.
     for feature in detailed_results[next(iter(detailed_results))]:  # Extract feature names from the first town's data.
         feature_rankings[feature] = {}
+        print(feature, 'feature')
 
         for town, comparisons in detailed_results.items():
-            # We're creating a list of (compared_town, score) pairs.
+            # Create a list of (compared_town, score) pairs for the current feature.
+            
+            print(town, 'town', feature, 'feature')
+            print(comparisons.items(),'comparisons')
             scored_comparisons = [(compared_town, scores[feature]) for compared_town, scores in comparisons.items()]
 
-            # Step 2: Sort the towns based on the scores in ascending order.
-            sorted_comparisons = sorted(scored_comparisons, key=lambda x: x[1])  # For ascending order.
+            # Sort the towns based on the scores in ascending order.
+            sorted_comparisons = sorted(scored_comparisons, key=lambda x: x[1])  # For ascending order, or use reverse=True for descending.
 
             # Extracting only the town names after sorting.
             feature_rankings[feature][town] = [compared_town for compared_town, score in sorted_comparisons]
 
-    # Step 3: Store in separate objects.
-    # Here, we're creating separate objects for each feature's rankings.
-    wind_ranking = feature_rankings.get('wind_score', {})
-    pressure_ranking = feature_rankings.get('pressure_score', {})
-    density_ranking = feature_rankings.get('density_score', {})
-    altitude_ranking = feature_rankings.get('altitude_score', {})
-    woodburner_ranking = feature_rankings.get('woodburner_score', {})
+    return feature_rankings
 
-    # Each of these variables (wind_ranking, pressure_ranking, etc.) is now an object that holds the rankings for a specific feature.
-    # They are in the same format as your ground_truth object and ready for comparison.
+# Function to generate the ranking objects for each feature.
+def create_ranking_objects(feature_rankings):
+    ranking_objects = {}
+    for feature, rankings in feature_rankings.items():
+        print(feature, rankings)
+        # Create a ranking object for this feature.
+        ranking_object = {}
+        for town, ranked_towns in rankings.items():
+            ranking_object[town] = ranked_towns  # Here, ranked_towns is a list of town names in order of ranking.
+        ranking_objects[feature] = ranking_object
+        print(ranking_objects,'ranking objects')
+    return ranking_objects
 
-    return wind_ranking, pressure_ranking, density_ranking, altitude_ranking, woodburner_ranking
 
-# Assuming `detailed_results` contains your detailed comparison data.
-wind_ranking, pressure_ranking, density_ranking, altitude_ranking, woodburner_ranking = generate_feature_rankings(weightingsOutput)
+# Generate the feature-specific rankings.
+# feature_rankings = generate_feature_rankings(weightingsOutput)
 
-# Step 4: Now, you can compare each of these ranking objects with your ground truth.
-# You need to define the logic for this comparison based on how you determine the match between the generated rankings and the ground truth.
+# Create the ranking objects.
+# ranking_objects = create_ranking_objects(feature_rankings)
+
+
+def restructure_data(data):
+    # Initialize a dictionary to hold the restructured data
+    scores_by_type = {
+        'wind_score': {},
+        'pressure_score': {},
+        'density_score': {},
+        'altitude_score': {},
+        'woodburner_score': {},
+        'total_score': {},
+    }
+
+    # Iterate through the original data to populate the new structure
+    for city, destinations in data.items():
+        for destination, scores in destinations.items():
+            for score_type, score in scores.items():
+                if score_type in scores_by_type:
+                    # Check if the city is already in our new structure; if not, add it
+                    if city not in scores_by_type[score_type]:
+                        scores_by_type[score_type][city] = []
+
+                    # Under each city, we'll assign the destination and score
+                    scores_by_type[score_type][city].append((destination, score))
+
+    # Now we sort the scores for each city under each score type
+    for score_type, cities in scores_by_type.items():
+        for city, scores in cities.items():
+            scores.sort(key=lambda x: x[1])  # Sort by score
+
+    return scores_by_type
+
+def extract_rankings(restructured_data):
+    # Extracting the rankings from the restructured data
+    rankings_by_score_type = {
+        score_type: {city: [dest[0] for dest in scores]
+                     for city, scores in cities.items()}
+        for score_type, cities in restructured_data.items()
+    }
+    return rankings_by_score_type
+
+def process_data_for_rankings(data):
+    # Restructure the data and sort it internally
+    restructured = restructure_data(data)
+    
+    # Extract rankings; they are already sorted by score because of 'restructure_data'
+    rankings_by_score_type = extract_rankings(restructured)
+    
+    # Return both restructured data and rankings
+    return restructured, rankings_by_score_type
+
+
+
+ # Process the data to get restructured data and rankings
+restructured_data, rankings_by_score_type = process_data_for_rankings(weightingsOutput)
+
+    # Pretty-printing the results
+print("Restructured Data:")
+pprint.pprint(restructured_data)
+
+print("\nRankings by Score Type:")
+pprint.pprint(rankings_by_score_type)
+
+
+def compare_with_ground_truth(rankings, ground_truth):
+    """
+    Compare ranking predictions with ground truth data.
+
+    Parameters:
+    rankings (dict): A dictionary containing ranking predictions.
+    ground_truth (dict): A dictionary containing the actual rankings.
+
+    Returns:
+    dict: A dictionary with the number of correct and incorrect predictions for each score type.
+    """
+
+    # Initialize the structure for the comparison results
+    comparison_results = {}
+
+    for score_type, cities_ranking in rankings.items():
+        # Initialize counters for each score type
+        correct_count = 0
+        incorrect_count = 0
+
+        for city, ranking in cities_ranking.items():
+            # Get the ground truth for the city
+            true_ranking = ground_truth.get(city, [])
+
+            # Compare the rankings with the ground truth
+            for i, ranked_city in enumerate(ranking):
+                if i < len(true_ranking) and ranked_city == true_ranking[i]:
+                    correct_count += 1
+                else:
+                    incorrect_count += 1
+
+        # Store the comparison results for the score type
+        comparison_results[score_type] = {
+            'correct': correct_count,
+            'incorrect': incorrect_count
+        }
+
+    return comparison_results
+
+
+# Call the function with the appropriate data
+results = compare_with_ground_truth(rankings_by_score_type, ground_truth)
+
+pprint.pprint(results)
+
+
+def calculate_weightings(results):
+    """
+    Calculate the weighting for each score type based on the number of correct predictions, excluding 'total_score'.
+
+    Parameters:
+    results (dict): A dictionary containing the correct and incorrect counts for each score type.
+
+    Returns:
+    dict: A dictionary containing the weightings for each score type.
+    """
+
+    # Calculate the total number of correct predictions, excluding 'total_score'
+    total_correct = sum([score['correct'] for score_type, score in results.items() if score_type != 'total_score'])
+
+    # Initialize a dictionary to hold the weightings
+    weightings = {}
+
+    # Calculate the weighting for each score type, excluding 'total_score'
+    for score_type, counts in results.items():
+        # Skip the 'total_score'
+        if score_type == 'total_score':
+            continue
+
+        correct_count = counts['correct']
+
+        # Avoid division by zero if total_correct is 0
+        if total_correct > 0:
+            weight = correct_count / total_correct
+        else:
+            weight = 0
+
+        weightings[score_type] = weight
+
+    return weightings
+# Call the function with the comparison results
+weightings = calculate_weightings(results)
+
+pprint.pprint(weightings)
