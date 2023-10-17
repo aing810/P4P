@@ -26,6 +26,8 @@ def difference(town1,town2,maxValue,minValue):
 
 def calculate_town_rankings(town_names, town_wind, town_pressure, town_density, town_altitude,town_woodburner,
                             wind_weight, pressure_weight, density_weight, altitude_weight,woodburner_weight):
+        #PHORT Params
+    #town_phort PHORT_weight
     results = {}
 
     for target_town in town_names:
@@ -85,7 +87,9 @@ def calculate_weightings(results):
 
 
 
-def calculate_detailed_isolated_rankings_direct(town_names, town_wind, town_pressure, town_density, town_altitude, town_woodburner):
+def calculate_detailed_isolated_rankings(town_names, town_wind, town_pressure, town_density, town_altitude, town_woodburner):
+    #PHORT Params
+    #town_phort
     """
     Calculate scores for each town compared to every other, isolating each feature, without using a combined town_features dictionary.
 
@@ -120,6 +124,8 @@ def calculate_detailed_isolated_rankings_direct(town_names, town_wind, town_pres
                         data = town_altitude
                     elif feature == "woodburner":
                         data = town_woodburner
+                    # elif feature == "phort":
+                    #     data = town_phort
 
                     # Calculate the score component for this feature.
                     if feature in ["wind", "pressure"]:  # These use the earthmover_distance function.
@@ -368,6 +374,9 @@ def main_function():
     town_woodburner = {}
     town_altitude = {}
     town_density = {}
+    #add new metadata feature here
+    # town_phort = {}
+
     # Load the data for each town
     for town in town_names:
         file_path = file_path_template.format(town, "Wind")
@@ -382,6 +391,12 @@ def main_function():
         df = pd.read_csv(file_path)
         town_pressure[town] = df['Pstn(hPa)'].dropna()
 
+
+        # Normalize pressure data using Min-Max normalization to range [0, 1]
+        scaler_pressure = MinMaxScaler()
+        town_pressure[town] = scaler_pressure.fit_transform(town_pressure[town].values.reshape(-1, 1)).flatten()
+
+        
         file_path = file_path_template.format(town, "discrete_metadata")
         df = pd.read_csv(file_path)
         town_altitude[town] = df['altitude'].iloc[0]
@@ -389,16 +404,19 @@ def main_function():
         town_density[town] = df['population'].iloc[0] / town_area
         town_woodburner[town] = df["woodburners"].iloc[0] / town_area
 
-        # Normalize pressure data using Min-Max normalization to range [0, 1]
-        scaler_pressure = MinMaxScaler()
-        town_pressure[town] = scaler_pressure.fit_transform(town_pressure[town].values.reshape(-1, 1)).flatten()
+        
+        #add new metadata feature here or into the discrete_metadata file
+        # town_phort[town] = df["phort"].iloc[0]
 
 
 
-
-    weightingsOutput = calculate_detailed_isolated_rankings_direct(town_names, town_wind, town_pressure, town_density, town_altitude, town_woodburner)
-
+    weightingsOutput = calculate_detailed_isolated_rankings(town_names, town_wind, town_pressure, town_density, town_altitude, town_woodburner)
+    #PHORT Params
+    #town_phort
     restructured_data, rankings_by_score_type = process_data_for_rankings(weightingsOutput)
+
+    pprint.pprint(restructured_data)
+    pprint.pprint(rankings_by_score_type)
 
     # Call the function with the appropriate data
     results = compare_with_ground_truth(rankings_by_score_type, ground_truth)
@@ -409,6 +427,9 @@ def main_function():
     # Call the function with the comparison results
     weightings = calculate_weightings(results)
 
+    # Print the weightings
+    print("Weightings:")
+    pprint.pprint(weightings)
 
     # Round the weights to 4 decimal places
     AltitudeWeight = round(weightings["altitude_score"], 4)
@@ -416,6 +437,7 @@ def main_function():
     PressureWeight = round(weightings["pressure_score"], 4)
     WoodBurnerWeight = round(weightings["woodburner_score"], 4)
     PopDensityWeight = round(weightings["density_score"], 4)
+    # PHORTWeight = round(weightings["phort_score"], 4)
     # Print the weights and their types
 
     result_rankings = calculate_town_rankings(town_names, town_wind, town_pressure, town_density, town_altitude,town_woodburner,

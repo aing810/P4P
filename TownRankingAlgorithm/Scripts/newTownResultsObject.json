@@ -1,0 +1,172 @@
+{
+    "Invercargill": {
+        "Cromwell": {
+            "wind_score": 0.009801594005568952,
+            "pressure_score": 0.010659595511681216,
+            "density_score": 0.006052626907063442,
+            "altitude_score": 0.9537275064267352,
+            "woodburner_score": 0.02820745372643021,
+            "total_score": 1.008448776577479
+        },
+        "Masterton": {
+            "wind_score": 0.07539834478481838,
+            "pressure_score": 0.013869741536417063,
+            "density_score": 0.08203969588324159,
+            "altitude_score": 0.2210796915167095,
+            "woodburner_score": 0.2020504667637993,
+            "total_score": 0.5944379404849859
+        },
+        "Reefton": {
+            "wind_score": 0.02933791202874373,
+            "pressure_score": 0.015119790699094873,
+            "density_score": 0.04613459267057664,
+            "altitude_score": 0.4370179948586118,
+            "woodburner_score": 0.3436260160331387,
+            "total_score": 0.8712363062901657
+        },
+        "Wellington": {
+            "wind_score": 0.14764640134544393,
+            "pressure_score": 0.03710649061940806,
+            "density_score": 0.5648857103452071,
+            "altitude_score": 0.010282776349614395,
+            "woodburner_score": 0.22126318482807347,
+            "total_score": 0.981184563487747
+        }
+    },
+    "Cromwell": {
+        "Invercargill": {
+            "wind_score": 0.009801594005568952,
+            "pressure_score": 0.010659595511681216,
+            "density_score": 0.006052626907063442,
+            "altitude_score": 0.9537275064267352,
+            "woodburner_score": 0.02820745372643021,
+            "total_score": 1.008448776577479
+        },
+        "Masterton": {
+            "wind_score": 0.07522248936866244,
+            "pressure_score": 0.024186632790616443,
+            "density_score": 0.10639752570180312,
+            "altitude_score": 0.7146529562982005,
+            "woodburner_score": 0.5869215065186846,
+            "total_score": 1.507381110677967
+        },
+        "Reefton": {
+            "wind_score": 0.03031406412288818,
+            "pressure_score": 0.011613772582161331,
+            "density_score": 0.14230262891446804,
+            "altitude_score": 0.4987146529562982,
+            "woodburner_score": 0.041245023721746536,
+            "total_score": 0.7241901422975623
+        },
+        "Wellington": {
+            "wind_score": 0.14877126252890133,
+            "pressure_score": 0.026802427356644072,
+            "density_score": 0.7533229319302518,
+            "altitude_score": 0.9820051413881749,
+            "woodburner_score": 0.22002276237967217,
+            "total_score": 2.130924525583644
+        }
+    },
+    "Masterton": {
+        "Invercargill": {
+            "wind_score": 0.07539834478481838,
+            "pressure_score": 0.013869741536417063,
+            "density_score": 0.08203969588324159,
+            "altitude_score": 0.2210796915167095,
+            "woodburner_score": 0.2020504667637993,
+            "total_score": 0.5944379404849859
+        },
+        "Cromwell": {
+            "wind_score": 0.07522248936866244,
+            "pressure_score": 0.024186632790616443,
+            "density_score": 0.10639752570180312,
+            "altitude_score": 0.7146529562982005,
+            "woodburner_score": 0.5869215065186846,
+            "total_score": 1.507381110677967
+        },
+        "Reefton": {
+            "wind_score": 0.08953179980960459,
+            "pressure_score": 0.027157916149414593,
+            "density_score": 0.15858474527944313,
+            "altitude_score": 0.19794344473007713,
+            "woodburner_score": 0.13259798931562256,
+            "total_score": 0.605815895284162
+        },
+        "Wellington": {
+            "wind_score": 0.22276192759228394,
+            "pressure_score": 0.05094932716941946,
+            "density_score": 0.45243555773634053,
+            "altitude_score": 0.2493573264781491,
+            "woodburner_score": 0.39386577541704126,
+            "total_score": 1.3693699143932343
+        }
+    },
+    "Reefton": {
+        "Invercargill": {
+            "wind_score": 0.02933791202874373,
+            "pressure_score": 0.015119790699094873,
+            "density_score": 0.04613459267057664,
+            "altitude_score": 0.4370179948586118,
+            "woodburner_score": 0.3436260160331387,
+            "total_score": 0.8712363062901657
+        },
+        "Cromwell": {
+            "wind_score": 0.03031406412288818,
+            "pressure_score": 0.011613772582161331,
+            "density_score": 0.14230262891446804,
+            "altitude_score": 0.4987146529562982,
+            "woodburner_score": 0.041245023721746536,
+            "total_score": 0.7241901422975623
+        },
+        "Masterton": {
+            "wind_score": 0.08953179980960459,
+            "pressure_score": 0.027157916149414593,
+            "density_score": 0.15858474527944313,
+            "altitude_score": 0.19794344473007713,
+            "woodburner_score": 0.13259798931562256,
+            "total_score": 0.605815895284162
+        },
+        "Wellington": {
+            "wind_score": 0.13855242615123473,
+            "pressure_score": 0.023900695893814983,
+            "density_score": 0.805510151507892,
+            "altitude_score": 0.4652956298200514,
+            "woodburner_score": 0.15181070737989671,
+            "total_score": 1.5850696107528897
+        }
+    },
+    "Wellington": {
+        "Invercargill": {
+            "wind_score": 0.14764640134544393,
+            "pressure_score": 0.03710649061940806,
+            "density_score": 0.5648857103452071,
+            "altitude_score": 0.010282776349614395,
+            "woodburner_score": 0.22126318482807347,
+            "total_score": 0.981184563487747
+        },
+        "Cromwell": {
+            "wind_score": 0.14877126252890133,
+            "pressure_score": 0.026802427356644072,
+            "density_score": 0.7533229319302518,
+            "altitude_score": 0.9820051413881749,
+            "woodburner_score": 0.22002276237967217,
+            "total_score": 2.130924525583644
+        },
+        "Masterton": {
+            "wind_score": 0.22276192759228394,
+            "pressure_score": 0.05094932716941946,
+            "density_score": 0.45243555773634053,
+            "altitude_score": 0.2493573264781491,
+            "woodburner_score": 0.39386577541704126,
+            "total_score": 1.3693699143932343
+        },
+        "Reefton": {
+            "wind_score": 0.13855242615123473,
+            "pressure_score": 0.023900695893814983,
+            "density_score": 0.805510151507892,
+            "altitude_score": 0.4652956298200514,
+            "woodburner_score": 0.15181070737989671,
+            "total_score": 1.5850696107528897
+        }
+    }
+}

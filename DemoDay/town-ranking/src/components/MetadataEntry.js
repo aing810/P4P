@@ -18,6 +18,7 @@ const TextEntry = ({ placeholder, value, onChange }) => {
       value={value}
       onChange={onChange}
       onKeyPress={handleKeyPress}
+      className="border-2 border-green-600 rounded py-2 pr-8 w-32" // Adjusted padding and width classes
     />
   );
 };

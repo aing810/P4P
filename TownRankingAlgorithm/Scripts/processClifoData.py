@@ -1,17 +1,19 @@
 import csv
+import argparse
+import sys
 
-# User input for input file path
-name = input("Enter the input CSV town name in unprocessed data insure format townnameUnprocessed.csv: ")
-# Input file path
-input_file = f'./UnprocessedData/ClifoOutput/{name}Unprocessed.csv'
+# Set up the argument parser
+parser = argparse.ArgumentParser(description="Process a town's weather data.")
+parser.add_argument('--town', required=True, help="Name of the town to process")
 
-# Output file paths
-wind_output_file = f'./Metadata/ProcessedFromScript/{name}_Wind.csv'
-pressure_output_file = f'./Metadata/ProcessedFromScript/{name}_Pressure.csv'
+# Parse the arguments
+args = parser.parse_args()
+town_name = args.town
 
-# Create separate lists for wind and pressure data
-wind_data = []
-pressure_data = []
+# Define the file paths
+input_file = f'./UnprocessedData/ClifoOutput/{town_name}Unprocessed.csv'
+wind_output_file = f'./Metadata/ProcessedFromScript/{town_name}_Wind.csv'
+pressure_output_file = f'./Metadata/ProcessedFromScript/{town_name}_Pressure.csv'
 
 
 # Flags to identify the current data section

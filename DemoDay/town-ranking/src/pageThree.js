@@ -4,42 +4,37 @@ import wind_image from "./resources/wind_bigger.png";
 import pressure_image from "./resources/pressureDist.png";
 import threeFigs from "./resources/3figs.png";
 
-import { useGlobalContext } from "./gobalContext";
-
 function PageThree() {
-  const { sharedState} = useGlobalContext();
-  return(
-    <div className="overflow-hidden">
+  return (
+    <div className="overflow-hidden h-full">
       {/* Main content */}
-      <div className="flex w-full max-w-7xl h-full border rounded-lg overflow-hidden shadow-lg bg-white">
-        <div className="flex flex-col w-1/4 ">
-          <h2 className="text-2xl font-bold text-#285954 px-4 pt-4">
-          <p>Shared Data: {sharedState.someData}</p>
-          </h2>
-          <div className="dummy-content p-4">
-            {" "}
-            {/* <-- Added padding here */}
-            <div className="py-2">
-              {" "}
-              {/* <-- Added vertical padding for each image component */}
-              <ImageComp
-                img={wind_image}
-                name="Wind Speed Distribution"
-              ></ImageComp>
-            </div>
-            <div className="py-2">
-              <ImageComp
-                img={pressure_image}
-                name="Atmostpheric Pressure Distribution"
-              ></ImageComp>
-            </div>
-            <div className="py-2">
-              <ImageComp
-                img={threeFigs}
-                name="Population Density/Altitude/Woodburner Density"
-              ></ImageComp>
-            </div>
-          </div>
+      <div className="flex flex-col items-start max-w-7xl mx-auto h-full border rounded-lg overflow-hidden shadow-lg bg-white p-4">
+        
+        <h2 className="text-2xl font-bold mb-4">Metadata:</h2>
+
+        {/* Container for the images - using grid layout for better spacing */}
+        <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* Each ImageComp represents an image, so they are direct children of the grid */}
+          <ImageComp
+            img={wind_image}
+            name="Wind Speed Distribution"
+          />
+          <ImageComp
+            img={pressure_image}
+            name="Atmospheric Pressure Distribution"
+          />
+          <ImageComp
+            img={threeFigs}
+            name="Population Density/Altitude/Woodburner Density"
+          />
+                    <ImageComp
+            img={threeFigs}
+            name="Population Density/Altitude/Woodburner Density"
+          />
+                    <ImageComp
+            img={threeFigs}
+            name="Population Density/Altitude/Woodburner Density"
+          />
         </div>
       </div>
     </div>

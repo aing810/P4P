@@ -13,8 +13,10 @@ import wind_image from "./resources/wind_bigger.png";
 import pressure_image from "./resources/pressureDist.png";
 import threeFigs from "./resources/3figs.png";
 import ImageComp from "./components/ImageComp";
+import { useGlobalContext } from "./gobalContext";
 
 function PageTwo() {
+  const { results, townsList } = useGlobalContext();
   const gridStyle = {
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
@@ -64,112 +66,6 @@ function PageTwo() {
     altitude_score: 0.03125,
     density_score: 0.3125,
     woodburner_score: 0.125,
-  };
-  const results = {
-    Invercargill: {
-      Cromwell: {
-        wind_score: 0.009801594005568952,
-        pressure_score: 0.010659595511681216,
-        density_score: 0.017142629387204376,
-        altitude_score: 0.9523809523809523,
-        woodburner_score: 0.02820745372643021,
-        total_score: 1.0181922250118371,
-      },
-      Masterton: {
-        wind_score: 0.07539834478481838,
-        pressure_score: 0.013869741536417063,
-        density_score: 0.2323579700450593,
-        altitude_score: 0.1984126984126984,
-        woodburner_score: 0.2020504667637993,
-        total_score: 0.7220892215427924,
-      },
-      Reefton: {
-        wind_score: 0.02933791202874373,
-        pressure_score: 0.015119790699094873,
-        density_score: 0.13066528570567998,
-        altitude_score: 0.42063492063492064,
-        woodburner_score: 0.3436260160331387,
-        total_score: 0.939383925101578,
-      },
-    },
-    Cromwell: {
-      Invercargill: {
-        wind_score: 0.009801594005568952,
-        pressure_score: 0.010659595511681216,
-        density_score: 0.017142629387204376,
-        altitude_score: 0.9523809523809523,
-        woodburner_score: 0.02820745372643021,
-        total_score: 1.0181922250118371,
-      },
-      Masterton: {
-        wind_score: 0.07522248936866244,
-        pressure_score: 0.024186632790616443,
-        density_score: 0.30134574273742615,
-        altitude_score: 0.7063492063492064,
-        woodburner_score: 0.5869215065186846,
-        total_score: 1.694025577764596,
-      },
-      Reefton: {
-        wind_score: 0.03031406412288818,
-        pressure_score: 0.011613772582161331,
-        density_score: 0.4030384270768054,
-        altitude_score: 0.48412698412698413,
-        woodburner_score: 0.041245023721746536,
-        total_score: 0.9703382716305855,
-      },
-    },
-    Masterton: {
-      Invercargill: {
-        wind_score: 0.07539834478481838,
-        pressure_score: 0.013869741536417063,
-        density_score: 0.2323579700450593,
-        altitude_score: 0.1984126984126984,
-        woodburner_score: 0.2020504667637993,
-        total_score: 0.7220892215427924,
-      },
-      Cromwell: {
-        wind_score: 0.07522248936866244,
-        pressure_score: 0.024186632790616443,
-        density_score: 0.30134574273742615,
-        altitude_score: 0.7063492063492064,
-        woodburner_score: 0.5869215065186846,
-        total_score: 1.694025577764596,
-      },
-      Reefton: {
-        wind_score: 0.08953179980960459,
-        pressure_score: 0.027157916149414593,
-        density_score: 0.4491536578303103,
-        altitude_score: 0.1746031746031746,
-        woodburner_score: 0.13259798931562256,
-        total_score: 0.8730445377081266,
-      },
-    },
-    Reefton: {
-      Invercargill: {
-        wind_score: 0.02933791202874373,
-        pressure_score: 0.015119790699094873,
-        density_score: 0.13066528570567998,
-        altitude_score: 0.42063492063492064,
-        woodburner_score: 0.3436260160331387,
-        total_score: 0.939383925101578,
-      },
-      Cromwell: {
-        wind_score: 0.03031406412288818,
-        pressure_score: 0.011613772582161331,
-        density_score: 0.4030384270768054,
-        altitude_score: 0.48412698412698413,
-        woodburner_score: 0.041245023721746536,
-        total_score: 0.9703382716305855,
-      },
-      Masterton: {
-        wind_score: 0.08953179980960459,
-        pressure_score: 0.027157916149414593,
-        density_score: 0.4491536578303103,
-        altitude_score: 0.1746031746031746,
-        woodburner_score: 0.13259798931562256,
-        total_score: 0.8730445377081266,
-      },
-    },
   };
 
   const townCoordinates = {
@@ -469,16 +365,13 @@ function PageTwo() {
               <h2 className="text-2xl font-bold text-#285954">Towns</h2>
               <div className="flex-1 grid grid-cols-2 gap-4">
                 {/* Maps */}
-                <MyMap town="Invercargill" data={results["Invercargill"]} />
-                <MyMap town="Cromwell" data={results["Cromwell"]} />
-                <MyMap town="Masterton" data={results["Masterton"]} />
-                <MyMap town="Reefton" data={results["Reefton"]} />
+                {townsList.map((town) => (
+          <MyMap key={town} town={town} data={results[town]} />
+        ))}
               </div>
               {/* Chart */}
               <AccuracyChart resultDetails={resultDetails} />
-
-              {/* Additional content from the previous right side can be added here */}
-              {/* ... */}
+              <span className="text-xs">*Green town names indicate correct matches to the ground truth, Red indicates incorrect</span>
             </div>
           )}
         </div>
