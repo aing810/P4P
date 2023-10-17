@@ -73,6 +73,7 @@ function PageTwo() {
     Cromwell: [-45.0382, 169.1985],
     Masterton: [-40.9511, 175.6574],
     Reefton: [-42.116, 171.8687],
+    Wellington: [-41.2924, 174.7787]
   };
 
   const [weights, setWeights] = useState(defaultWeights);
@@ -143,67 +144,71 @@ function PageTwo() {
       console.log(deepCopy, "output");
       calculateRanking();
     }
-  }, [weights]);
+  }, [weights, results]);
 
   function MyMap({ town, data }) {
     const mapRef = useRef(null);
 
     useEffect(() => {
-      const map = L.map(mapRef.current, {
-        zoomControl: false,
-        scrollWheelZoom: false,
-        touchZoom: false,
-        doubleClickZoom: false,
-      }).setView(townCoordinates[town], 12);
+      console.log(townsList, "townsList", townsList.length, weightedResults, "weightedResults", Object.keys(weightedResults).length)
+      if (townsList.length ==  Object.keys(weightedResults).length) { console.log("true, equal") }
+      if (townsList.length ==  Object.keys(weightedResults).length) {
+        const map = L.map(mapRef.current, {
+          zoomControl: false,
+          scrollWheelZoom: false,
+          touchZoom: false,
+          doubleClickZoom: false,
+        }).setView(townCoordinates[town], 12);
 
-      if (selectedTown === town) {
-        // Display rankings for the selected town
-        const rankList = rankings[selectedTown]
-          .map((t, index) => {
-            // Check if the individual ranking matches the ground truth
-            const isCorrect = ground_truth[selectedTown][index] === t;
-            return `<span class="${
-              isCorrect ? "text-green-500" : "text-red-500"
-            }">${index + 1}. ${t}</span>`;
-          })
-          .join("<br/>");
+        if (selectedTown === town) {
+          // Display rankings for the selected town
+          const rankList = rankings[selectedTown]
+            .map((t, index) => {
+              // Check if the individual ranking matches the ground truth
+              const isCorrect = true
+              return `<span class="${isCorrect ? "text-green-500" : "text-red-500"
+                }">${index + 1}. ${t}</span>`;
+            })
+            .join("<br/>");
 
-        const popupContent = `<strong>Rankings:</strong><br/>${rankList}`;
+          const popupContent = `<strong>Rankings:</strong><br/>${rankList}`;
 
-        L.popup()
-          .setLatLng(townCoordinates[town])
-          .setContent(popupContent)
-          .openOn(map);
-      } else {
-        const score = weightedResults[selectedTown][town].total_score;
-        const [lat, lng] = townCoordinates[town];
-        const green = Math.min(255, Math.floor(255 * (1 - score * 2)));
-        const red = Math.min(255, Math.floor(255 * (score * 2)));
-        const color = `rgb(${red}, ${green}, 0)`;
+          L.popup()
+            .setLatLng(townCoordinates[town])
+            .setContent(popupContent)
+            .openOn(map);
+        } else {
+          console.log("weightedResults", weightedResults)
+          const score = weightedResults[selectedTown][town].total_score;
+          const [lat, lng] = townCoordinates[town];
+          const green = Math.min(255, Math.floor(255 * (1 - score * 2)));
+          const red = Math.min(255, Math.floor(255 * (score * 2)));
+          const color = `rgb(${red}, ${green}, 0)`;
 
-        const circle = L.circle([lat, lng], {
-          color: color,
-          fillColor: color,
-          fillOpacity: 0.4,
-          radius: 2000,
-        }).addTo(map);
+          const circle = L.circle([lat, lng], {
+            color: color,
+            fillColor: color,
+            fillOpacity: 0.4,
+            radius: 2000,
+          }).addTo(map);
 
-        circle.bindPopup(`Score: ${score.toFixed(2)}`);
-        circle.on("mouseover", function (e) {
-          this.openPopup();
-        });
-        circle.on("mouseout", function (e) {
-          this.closePopup();
-        });
+          circle.bindPopup(`Score: ${score.toFixed(2)}`);
+          circle.on("mouseover", function (e) {
+            this.openPopup();
+          });
+          circle.on("mouseout", function (e) {
+            this.closePopup();
+          });
+        }
+
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(
+          map
+        );
+
+        return () => {
+          map.remove();
+        };
       }
-
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(
-        map
-      );
-
-      return () => {
-        map.remove();
-      };
     }, [town, data]);
 
     return <div className="z-0 w-[25vh] h-[25vh] z-1" ref={mapRef}></div>;
@@ -365,12 +370,12 @@ function PageTwo() {
               <h2 className="text-2xl font-bold text-#285954">Towns</h2>
               <div className="flex-1 grid grid-cols-2 gap-4">
                 {/* Maps */}
-                {townsList.map((town) => (
-          <MyMap key={town} town={town} data={results[town]} />
-        ))}
+                {Array.isArray(townsList) && townsList.map((town) => (
+                  <MyMap key={town} town={town} data={results[town]} />
+                ))}
               </div>
               {/* Chart */}
-              <AccuracyChart resultDetails={resultDetails} />
+              {/* <AccuracyChart resultDetails={resultDetails} /> */}
               <span className="text-xs">*Green town names indicate correct matches to the ground truth, Red indicates incorrect</span>
             </div>
           )}

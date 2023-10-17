@@ -187,8 +187,11 @@ function PageOne() {
         .then((data) => {
           console.log("API response:", data);
           // Handle the API response as needed
-          setResults(data)
-          setTownsList(...townsList, "Wellington")
+          const innerObject = data.output;
+          setResults(innerObject)
+          console.log("Output: endpoint formatted", innerObject)
+          // setResults(data)
+          setTownsList(prevTownsList => [...prevTownsList, "Wellington"]);
 
         })
         .catch((error) => {

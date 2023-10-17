@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 
 // Create a new context
 const GlobalContext = createContext();
@@ -221,6 +221,10 @@ export const GlobalProvider = ({ children }) => {
     },
   };
 
+  useEffect(() => {
+    console.log('results updated', results)
+  }
+  , [results])
   
   return (
     <GlobalContext.Provider value={{ sharedState, setSharedState, results, townsList, setResults, setTownsList }}>
