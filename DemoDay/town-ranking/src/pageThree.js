@@ -3,6 +3,9 @@ import ImageComp from "./components/ImageComp";
 import wind_image from "./resources/wind_bigger.png";
 import pressure_image from "./resources/pressureDist.png";
 import threeFigs from "./resources/3figs.png";
+import altitudeGraph from "./resources/altitudeGraph.png";
+import populationDensityGraph from "./resources/populationDensityGraph.png";
+import woodBurnerDensityGraph from "./resources/woodBurnerDensityGraph.png";
 
 function PageThree() {
   return (
@@ -24,16 +27,16 @@ function PageThree() {
             name="Atmospheric Pressure Distribution"
           />
           <ImageComp
-            img={threeFigs}
-            name="Population Density/Altitude/Woodburner Density"
+            img={altitudeGraph}
+            name="Altitude"
           />
                     <ImageComp
-            img={threeFigs}
-            name="Population Density/Altitude/Woodburner Density"
+            img={woodBurnerDensityGraph}
+            name="Home Wood Burner Density Per KM²"
           />
                     <ImageComp
-            img={threeFigs}
-            name="Population Density/Altitude/Woodburner Density"
+            img={populationDensityGraph}
+            name="Population Density Per KM²"
           />
         </div>
       </div>

@@ -114,7 +114,7 @@ export const GlobalProvider = ({ children }) => {
     },
   }); // Initialize your shared state here
 
-  const Aresults = {
+  const originalResults = {
     Invercargill: {
       Cromwell: {
         wind_score: 0.009801594005568952,

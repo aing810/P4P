@@ -151,8 +151,8 @@ function PageTwo() {
 
     useEffect(() => {
       console.log(townsList, "townsList", townsList.length, weightedResults, "weightedResults", Object.keys(weightedResults).length)
-      if (townsList.length ==  Object.keys(weightedResults).length) { console.log("true, equal") }
-      if (townsList.length ==  Object.keys(weightedResults).length) {
+      if (townsList.length == Object.keys(weightedResults).length) { console.log("true, equal") }
+      if (townsList.length == Object.keys(weightedResults).length) {
         const map = L.map(mapRef.current, {
           zoomControl: false,
           scrollWheelZoom: false,
@@ -166,7 +166,7 @@ function PageTwo() {
             .map((t, index) => {
               // Check if the individual ranking matches the ground truth
               const isCorrect = true
-              return `<span class="${isCorrect ? "text-green-500" : "text-red-500"
+              return `<span class="${isCorrect ? "text-black-500" : "text-black-500"
                 }">${index + 1}. ${t}</span>`;
             })
             .join("<br/>");
@@ -375,7 +375,11 @@ function PageTwo() {
                 ))}
               </div>
               {/* Chart */}
-              {/* <AccuracyChart resultDetails={resultDetails} /> */}
+              {townsList.length == 4 && (
+                <div>
+                  <AccuracyChart resultDetails={resultDetails} />
+                </div>)}
+
               <span className="text-xs">*Green town names indicate correct matches to the ground truth, Red indicates incorrect</span>
             </div>
           )}
